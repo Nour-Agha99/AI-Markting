@@ -1,0 +1,254 @@
+/* ============================================
+   Smart Supermarket Dashboard — Theme
+   مستوحى من تصميم لوحة واتساب الداكنة
+   ============================================ */
+
+:root {
+  /* ---- الخلفيات Backgrounds ---- */
+  --bg-app: #0A0D12;          /* خلفية الصفحة الأساسية */
+  --bg-card: #161B22;         /* خلفية الكاردات */
+  --bg-card-alt: #1A1F2A;     /* خلفية الكاردات الثانوية / hover */
+  --bg-pill: #1F242E;         /* خلفية الأزرار الصغيرة (الكاش، بال بي...) */
+  --bg-tab: #11151C;          /* خلفية شريط التابات السفلي */
+
+  /* ---- الحدود Borders ---- */
+  --border-subtle: #232834;
+  --border-active: #3B82F6;
+
+  /* ---- الألوان الأساسية Brand Colors ---- */
+  --color-primary: #3B82F6;       /* أزرق: تاب مختار / مزامنة / الكل */
+  --color-primary-hover: #2563EB;
+  --color-primary-soft: rgba(59, 130, 246, 0.15); /* خلفية شفافة للأزرق */
+
+  --color-success: #22C55E;       /* أخضر: واتساب / مقبوضات */
+  --color-success-hover: #16A34A;
+  --color-success-soft: rgba(34, 197, 94, 0.15);
+
+  --color-danger: #EF4444;        /* أحمر: ديون / تحذيرات */
+  --color-danger-hover: #DC2626;
+  --color-danger-soft: rgba(239, 68, 68, 0.15);
+
+  --color-warning: #F59E0B;       /* أصفر/برتقالي: تنبيهات المخزون */
+  --color-warning-soft: rgba(245, 158, 11, 0.15);
+
+  /* ---- النصوص Text ---- */
+  --text-primary: #FFFFFF;        /* عناوين / أرقام رئيسية */
+  --text-secondary: #9CA3AF;      /* نصوص ثانوية / تسميات */
+  --text-muted: #6B7280;          /* نصوص خافتة جداً */
+  --text-on-primary: #FFFFFF;     /* نص فوق الأزرق */
+
+  /* ---- ظلال Shadows ---- */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+  /* ---- نصف القطر Radius ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* ---- المسافات Spacing ---- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* ---- الخطوط Font ---- */
+  --font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+}
+
+/* ============================================
+   إعدادات أساسية عامة
+   ============================================ */
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  direction: rtl;
+}
+
+/* ============================================
+   مكونات جاهزة (Utility Classes)
+   ============================================ */
+
+/* --- كارد عام --- */
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-card);
+}
+
+/* --- كارد الإحصائيات (ديون كلية / مقبوضات / إجمالي المبيعات) --- */
+.stat-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  text-align: center;
+}
+
+.stat-card .stat-label {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: var(--space-sm);
+}
+
+.stat-card .stat-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.stat-card.danger .stat-value { color: var(--color-danger); }
+.stat-card.success .stat-value { color: var(--color-success); }
+.stat-card.primary .stat-value { color: var(--text-primary); }
+
+/* --- أزرار Pills (كاش، بال بي، جوال بي...) --- */
+.pill {
+  background-color: var(--bg-pill);
+  border-radius: var(--radius-pill);
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border-subtle);
+}
+
+/* --- زر فلتر مختار (الكل / اليوم / الأسبوع...) --- */
+.filter-btn {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.filter-btn.active {
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
+}
+
+/* --- زر واتساب --- */
+.btn-whatsapp {
+  background-color: var(--color-success);
+  color: var(--text-on-primary);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-whatsapp:hover {
+  background-color: var(--color-success-hover);
+}
+
+/* --- زر مزامنة / حالة معلقة --- */
+.sync-banner {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sync-badge {
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  display: inline-block;
+}
+
+/* --- التابات السفلية (بيع، منتجات، السجل، الديون، ملخص) --- */
+.tab-bar {
+  background-color: var(--bg-tab);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  border-radius:  999px;
+  border: 1px solid #06215b;
+}
+
+.tab-item {
+     display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    background: transparent;
+    border: none;
+}
+
+.tab-item.active {
+  color: var(--text-primary);
+}
+
+.tab-item.active .tab-icon-bg {
+  background-color: var(--bg-card-alt);
+  border-radius: var(--radius-sm);
+}
+
+/* --- صف منتج في القائمة --- */
+.product-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.product-row .product-name {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.product-row .product-meta {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.product-row .product-price {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* --- شريط عنوان قسم (مثل "ملخص الكل" أو "إجمالي المنتجات") --- */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.section-header .section-title {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.section-header .section-count {
+  color: var(--text-primary);
+  font-weight: 600;
+}

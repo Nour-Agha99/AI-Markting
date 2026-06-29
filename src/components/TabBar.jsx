@@ -1,47 +1,30 @@
-import { ShoppingCart, Package, CreditCard } from 'lucide-react'
+import { ShoppingBag, Package, Clock, AlertTriangle, BarChart2 } from "lucide-react";
 
-const tabs = [
-  { id: 'sell', label: 'بيع', icon: ShoppingCart },
-  { id: 'products', label: 'منتجات', icon: Package },
-  { id: 'debts', label: 'ديون', icon: CreditCard },
-]
+const TABS = [
+  { id: "sale", label: "بيع", icon: ShoppingBag },
+  { id: "products", label: "منتجات", icon: Package },
+  { id: "debts", label: "الديون", icon: AlertTriangle },
+];
 
-function TabBar({ active, onChange }) {
+export default function TabBar({ activeTab, onChange }) {
   return (
-    <div style={{
-      display: 'flex',
-      background: '#16213e',
-      borderTop: '1px solid #0f3460',
-      position: 'fixed',
-      bottom: 0,
-      width: '100%',
-      maxWidth: '480px',
-    }}>
-      {tabs.map(({ id, label, icon: Icon }) => (
-        <button
-          key={id}
-          onClick={() => onChange(id)}
-          style={{
-            flex: 1,
-            padding: '12px',
-            background: 'none',
-            border: 'none',
-            color: active === id ? '#e94560' : '#888',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '12px',
-            fontFamily: 'inherit',
-          }}
-        >
-          <Icon size={22} />
-          {label}
-        </button>
-      ))}
-    </div>
-  )
+    <nav className="tab-bar">
+      {TABS.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            className={`tab-item ${isActive ? "active" : ""}`}
+            onClick={() => onChange(tab.id)}
+          >
+            <span className={isActive ? "tab-icon-bg" : ""}>
+              <Icon size={20} strokeWidth={isActive ? 2.4 : 1.8} />
+            </span>
+            <span>{tab.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
 }
-
-export default TabBar
