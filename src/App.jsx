@@ -20,7 +20,7 @@ function App() {
         background: "var(--bg-app)",
         display: "flex",
         flexDirection: "column",
-        maxWidth: "760px",
+        maxWidth: "860px",
         margin: "0 auto",
         marginBlock:"100px" ,
       }}

@@ -117,14 +117,29 @@ export async function deleteProduct(id) {
 // ---------- المبيعات ----------
 
 export async function getSales() {
-  // TODO: استبدال بـ -> GET من n8n webhook: /webhook/get-sales
-  return ;
+  try {
+    const res = await fetch(ENDPOINTS.getSales, { method: "GET" });
+
+      if (!res.ok) {
+        throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
+      }
+
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : [];
+
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      throw new Error(
+        err.message === "Failed to fetch"
+          ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
+          : err.message
+      );
+    }
 }
 
 export async function recordSale(sale) {
   // متصل فعلياً بـ n8n webhook: POST /webhook/record-sales
   // payload المبعوت: { customerName, isDebt, paymentMethod, items: [{productId, qty, unitPrice}], notes, total }
-
 
   const newSale = {
     ...sale,
@@ -137,38 +152,26 @@ export async function recordSale(sale) {
     const res = await fetch(ENDPOINTS.recordSale, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sale),
+      body: JSON.stringify(newSale),
     });
 
     if (!res.ok) {
       throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
     }
 
-    // الـ "Respond to Webhook" node لسا بلا معالجة، فممكن يرجع رد فاضي أو نص بسيط
     const text = await res.text();
     try {
       response = text ? JSON.parse(text) : null;
     } catch {
-      response = text; // الرد مش JSON، خليه كنص خام
+      response = text;
     }
   } catch (err) {
-    // فشل الاتصال (نت مقطوع أو السيرفر مش راد) — نوقف العملية ونعلم المستخدم
     throw new Error(
       err.message === "Failed to fetch"
         ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
         : err.message
     );
   }
-
-  // تحديث المخزون محلياً (لحد ما n8n يضيف هاد المنطق بنفسه عبر Google Sheets)
-  const updatedProducts = products.map((p) => {
-    const item = sale.items.find((i) => i.productId === p.id);
-    if (item) {
-      return { ...p, quantity: Math.max(0, p.quantity - item.qty) };
-    }
-    return p;
-  });
-
 
   // لو البيع "دين"، بيتسجل تلقائياً بصفحة الديون (محلياً لحد ما n8n يعالجها)
   if (sale.isDebt) {
