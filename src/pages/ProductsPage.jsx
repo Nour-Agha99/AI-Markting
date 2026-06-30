@@ -9,18 +9,28 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     refresh();
   }, []);
-
+  
   function refresh() {
-    getProducts().then(setProducts);
+    setLoading(true);
+    setErrorMsg("");
+    getProducts()
+      .then(setProducts)
+      .catch((err) => setErrorMsg(err.message || "ما قدرنا نجيب المنتجات."))
+      .finally(() => setLoading(false));
   }
 
   function openAddForm() {
     setForm(emptyForm);
     setEditingId(null);
+    setErrorMsg("");
     setShowForm(true);
   }
 
@@ -34,6 +44,7 @@ export default function ProductsPage() {
       alertThreshold: p.alertThreshold,
     });
     setEditingId(p.id);
+    setErrorMsg("");
     setShowForm(true);
   }
 
@@ -48,18 +59,34 @@ export default function ProductsPage() {
     };
     if (!payload.name) return;
 
-    if (editingId) {
-      await updateProduct(editingId, payload);
-    } else {
-      await addProduct(payload);
+    setErrorMsg("");
+    setSaving(true);
+    try {
+      if (editingId) {
+        await updateProduct(editingId, payload);
+      } else {
+        await addProduct(payload);
+      }
+      setShowForm(false);
+      refresh();
+    } catch (err) {
+      setErrorMsg(err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    refresh();
   }
 
   async function handleDelete(id) {
-    await deleteProduct(id);
-    refresh();
+    setErrorMsg("");
+    setDeletingId(id);
+    try {
+      await deleteProduct(id);
+      refresh();
+    } catch (err) {
+      setErrorMsg(err.message || "ما قدرنا نحذف المنتج، حاول مرة ثانية.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -68,6 +95,12 @@ export default function ProductsPage() {
         <span className="section-title">إجمالي المنتجات</span>
         <span className="section-count">{products.length}</span>
       </div>
+
+      {errorMsg && !showForm && (
+        <div className="card" style={{ background: "var(--color-danger-soft)", color: "var(--color-danger)", textAlign: "center", fontWeight: 600 }}>
+          {errorMsg}
+        </div>
+      )}
 
       <button
         onClick={openAddForm}
@@ -79,7 +112,12 @@ export default function ProductsPage() {
       </button>
 
       <div className="card" style={{ padding: 0 }}>
-        {products.length === 0 && (
+        {loading && (
+          <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)" }}>
+            جاري التحميل...
+          </div>
+        )}
+        {!loading && products.length === 0 && (
           <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)" }}>
             ما في منتجات بعد. ضيف أول منتج.
           </div>
@@ -93,7 +131,7 @@ export default function ProductsPage() {
               style={{ padding: "14px 16px", borderBottom: idx === products.length - 1 ? "none" : undefined }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button onClick={() => handleDelete(p.id)} style={iconBtnStyle}>
+                <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} style={{ ...iconBtnStyle, opacity: deletingId === p.id ? 0.5 : 1 }}>
                   <Trash2 size={15} color="var(--color-danger)" />
                 </button>
                 <button onClick={() => openEditForm(p)} style={iconBtnStyle}>
@@ -157,8 +195,19 @@ export default function ProductsPage() {
                 <input type="number" style={inputStyle} value={form.alertThreshold} onChange={(e) => setForm({ ...form, alertThreshold: e.target.value })} />
               </Field>
 
-              <button onClick={handleSave} className="btn-whatsapp" style={{ background: "var(--color-primary)", justifyContent: "center", marginTop: 8 }}>
-                حفظ
+              {errorMsg && (
+                <div style={{ color: "var(--color-danger)", fontSize: 13, textAlign: "center" }}>
+                  {errorMsg}
+                </div>
+              )}
+
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="btn-whatsapp"
+                style={{ background: "var(--color-primary)", justifyContent: "center", marginTop: 8, opacity: saving ? 0.6 : 1 }}
+              >
+                {saving ? "جاري الحفظ..." : "حفظ"}
               </button>
             </div>
           </div>

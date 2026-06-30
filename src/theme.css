@@ -118,16 +118,6 @@ body {
   border: 1px solid var(--border-subtle);
 }
 
-/* --- زر فلتر مختار (الكل / اليوم / الأسبوع...) --- */
-.filter-btn {
-  background-color: transparent;
-  color: var(--text-secondary);
-  border: none;
-  border-radius: var(--radius-pill);
-  padding: 8px 16px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
 
 .filter-btn.active {
   background-color: var(--color-primary);
@@ -217,12 +207,14 @@ body {
   align-items: center;
   padding: 14px 0;
   border-bottom: 1px solid var(--border-subtle);
+  direction: ltr;
 }
 
 .product-row .product-name {
   color: var(--text-primary);
   font-size: 15px;
   font-weight: 500;
+  width: 14%;
 }
 
 .product-row .product-meta {

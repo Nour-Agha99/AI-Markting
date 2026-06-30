@@ -1,69 +1,116 @@
-// ============================================
-// خدمة البيانات — حالياً Mock، بعدين رح تتوصل بـ n8n
-// ============================================
-//
-// كل دالة هون لاحقاً رح تستبدل بـ fetch لـ n8n webhook.
-// شكل البيانات (response shape) ثابت من هسا عشان ما نضطر
-// نعدل الواجهة لما نوصل المرحلة الثانية (الربط مع n8n).
+import { ENDPOINTS } from "./config";
 
 const PRODUCTS_KEY = "mock_products";
 const SALES_KEY = "mock_sales";
 const DEBTS_KEY = "mock_debts";
 
-const seedProducts = [
-  { id: "p1", name: "سمك بكلا", buyPrice: 45, sellPrice: 61.5, quantity: 18.2, unit: "kg", alertThreshold: 5 },
-  { id: "p2", name: "شبار", buyPrice: 22, sellPrice: 30, quantity: 0.8, unit: "kg", alertThreshold: 2 },
-  { id: "p3", name: "صدر جاج", buyPrice: 18, sellPrice: 24, quantity: 40, unit: "piece", alertThreshold: 10 },
-  { id: "p4", name: "دبابيس", buyPrice: 0.8, sellPrice: 1.2, quantity: 200, unit: "piece", alertThreshold: 30 },
-];
-
-const seedSales = [];
-const seedDebts = [];
-
-function loadFromStorage(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) {
-      localStorage.setItem(key, JSON.stringify(fallback));
-      return fallback;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
-}
-
-function saveToStorage(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
 
 // ---------- المنتجات ----------
 
 export async function getProducts() {
-  // TODO: استبدال بـ -> POST/GET إلى n8n webhook: /webhook/get-products
-  return loadFromStorage(PRODUCTS_KEY, seedProducts);
+  try {
+    const res = await fetch(ENDPOINTS.getProducts, { method: "GET" });
+
+      if (!res.ok) {
+        throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
+      }
+
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : [];
+
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      throw new Error(
+        err.message === "Failed to fetch"
+          ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
+          : err.message
+      );
+    }
 }
 
 export async function addProduct(product) {
-  // TODO: استبدال بـ -> POST إلى n8n webhook: /webhook/add-product
-  const products = loadFromStorage(PRODUCTS_KEY, seedProducts);
+ 
   const newProduct = { ...product, id: `p${Date.now()}` };
-  const updated = [...products, newProduct];
-  saveToStorage(PRODUCTS_KEY, updated);
-  return newProduct;
+  let response;
+  try {
+    const res = await fetch(ENDPOINTS.addProduct, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newProduct),
+    });
+
+    if (!res.ok) {
+      throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
+    }
+
+    const text = await res.text();
+
+    try {
+      response = text ? JSON.parse(text) : null;
+    } catch {
+      response = text;
+    }
+  } catch (err) {
+    throw new Error(
+      err.message === "Failed to fetch"
+        ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
+        : err.message
+    );
+  }
+
+  return { ...newProduct, serverResponse: response };
 }
 
 export async function updateProduct(id, changes) {
-  const products = loadFromStorage(PRODUCTS_KEY, seedProducts);
-  const updated = products.map((p) => (p.id === id ? { ...p, ...changes } : p));
-  saveToStorage(PRODUCTS_KEY, updated);
-  return updated.find((p) => p.id === id);
+  let response;
+  try {
+    const res = await fetch(ENDPOINTS.editProduct, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...changes }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
+    }
+
+    const text = await res.text();
+
+    try {
+      response = text ? JSON.parse(text) : null;
+    } catch {
+      response = text;
+    }
+  } catch (err) {
+    throw new Error(
+      err.message === "Failed to fetch"
+        ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
+        : err.message
+    );
+  }
+
+  return { id, ...changes, serverResponse: response };
 }
 
 export async function deleteProduct(id) {
-  const products = loadFromStorage(PRODUCTS_KEY, seedProducts);
-  const updated = products.filter((p) => p.id !== id);
-  saveToStorage(PRODUCTS_KEY, updated);
+  try {
+    const res = await fetch(ENDPOINTS.deleteProduct, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
+    }
+  } catch (err) {
+    throw new Error(
+      err.message === "Failed to fetch"
+        ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
+        : err.message
+    );
+  }
+
   return true;
 }
 
@@ -71,15 +118,13 @@ export async function deleteProduct(id) {
 
 export async function getSales() {
   // TODO: استبدال بـ -> GET من n8n webhook: /webhook/get-sales
-  return loadFromStorage(SALES_KEY, seedSales);
+  return ;
 }
 
 export async function recordSale(sale) {
-  // TODO: استبدال بـ -> POST إلى n8n webhook: /webhook/record-sale
-  // payload المتوقع: { customerName, isDebt, paymentMethod, items: [{productId, qty, unitPrice}], notes, total }
-  // إذا isDebt === true → n8n لازم يسجل سطر بشيت "الديون" كمان (نفس منطق addDebt تحت)
-  const sales = loadFromStorage(SALES_KEY, seedSales);
-  const products = loadFromStorage(PRODUCTS_KEY, seedProducts);
+  // متصل فعلياً بـ n8n webhook: POST /webhook/record-sales
+  // payload المبعوت: { customerName, isDebt, paymentMethod, items: [{productId, qty, unitPrice}], notes, total }
+
 
   const newSale = {
     ...sale,
@@ -87,7 +132,35 @@ export async function recordSale(sale) {
     date: new Date().toISOString(),
   };
 
-  // تحديث المخزون محلياً (تجربة فقط، n8n رح يعمل هاد لاحقاً)
+  let response;
+  try {
+    const res = await fetch(ENDPOINTS.recordSale, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(sale),
+    });
+
+    if (!res.ok) {
+      throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
+    }
+
+    // الـ "Respond to Webhook" node لسا بلا معالجة، فممكن يرجع رد فاضي أو نص بسيط
+    const text = await res.text();
+    try {
+      response = text ? JSON.parse(text) : null;
+    } catch {
+      response = text; // الرد مش JSON، خليه كنص خام
+    }
+  } catch (err) {
+    // فشل الاتصال (نت مقطوع أو السيرفر مش راد) — نوقف العملية ونعلم المستخدم
+    throw new Error(
+      err.message === "Failed to fetch"
+        ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
+        : err.message
+    );
+  }
+
+  // تحديث المخزون محلياً (لحد ما n8n يضيف هاد المنطق بنفسه عبر Google Sheets)
   const updatedProducts = products.map((p) => {
     const item = sale.items.find((i) => i.productId === p.id);
     if (item) {
@@ -96,32 +169,29 @@ export async function recordSale(sale) {
     return p;
   });
 
-  saveToStorage(SALES_KEY, [...sales, newSale]);
-  saveToStorage(PRODUCTS_KEY, updatedProducts);
 
-  // لو البيع "دين"، بيتسجل تلقائياً بصفحة الديون
+  // لو البيع "دين"، بيتسجل تلقائياً بصفحة الديون (محلياً لحد ما n8n يعالجها)
   if (sale.isDebt) {
     await addDebt({
       customerName: sale.customerName,
       amount: sale.total,
-      paymentMethod: sale.paymentMethod, // الطريقة المتوقعة عند السداد لاحقاً
+      paymentMethod: sale.paymentMethod,
       saleId: newSale.id,
     });
   }
 
-  return newSale;
+  return { ...newSale, serverResponse: response };
 }
 
 // ---------- الديون ----------
 
 export async function getDebts() {
   // TODO: استبدال بـ -> GET من n8n webhook: /webhook/get-debts
-  return loadFromStorage(DEBTS_KEY, seedDebts);
+  return ;
 }
 
 export async function addDebt(debt) {
   // TODO: استبدال بـ -> POST إلى n8n webhook: /webhook/add-debt
-  const debts = loadFromStorage(DEBTS_KEY, seedDebts);
   const newDebt = {
     ...debt,
     id: `d${Date.now()}`,
@@ -129,19 +199,16 @@ export async function addDebt(debt) {
     status: "unpaid",
     paidAmount: 0,
   };
-  saveToStorage(DEBTS_KEY, [...debts, newDebt]);
   return newDebt;
 }
 
 export async function recordPayment(debtId, amount) {
   // TODO: استبدال بـ -> POST إلى n8n webhook: /webhook/pay-debt
-  const debts = loadFromStorage(DEBTS_KEY, seedDebts);
   const updated = debts.map((d) => {
     if (d.id !== debtId) return d;
     const paidAmount = d.paidAmount + amount;
     const status = paidAmount >= d.amount ? "paid" : "partial";
     return { ...d, paidAmount, status };
   });
-  saveToStorage(DEBTS_KEY, updated);
   return updated.find((d) => d.id === debtId);
 }
