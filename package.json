@@ -3,13 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://Nour-Agha99.github.io/AI-Markting",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "deploy": "gh-pages -d dist",
-    "lint": "oxlint",
-    "preview": "vite preview"
-  },
+  "dev": "vite",
+  "build": "vite build",
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist",
+  "lint": "oxlint",
+  "preview": "vite preview"
+},
   "dependencies": {
     "lucide-react": "^1.21.0",
     "react": "^19.2.7",
