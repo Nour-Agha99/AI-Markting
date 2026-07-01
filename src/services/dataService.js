@@ -138,8 +138,6 @@ export async function getSales() {
 }
 
 export async function recordSale(sale) {
-  // متصل فعلياً بـ n8n webhook: POST /webhook/record-sales
-  // payload المبعوت: { customerName, isDebt, paymentMethod, items: [{productId, qty, unitPrice}], notes, total }
 
   const newSale = {
     ...sale,
@@ -173,45 +171,51 @@ export async function recordSale(sale) {
     );
   }
 
-  // لو البيع "دين"، بيتسجل تلقائياً بصفحة الديون (محلياً لحد ما n8n يعالجها)
-  if (sale.isDebt) {
-    await addDebt({
-      customerName: sale.customerName,
-      amount: sale.total,
-      paymentMethod: sale.paymentMethod,
-      saleId: newSale.id,
-    });
-  }
-
   return { ...newSale, serverResponse: response };
 }
 
 // ---------- الديون ----------
 
 export async function getDebts() {
-  // TODO: استبدال بـ -> GET من n8n webhook: /webhook/get-debts
-  return ;
-}
+  try {
+    const res = await fetch(ENDPOINTS.getDebts, { method: "GET" });
 
-export async function addDebt(debt) {
-  // TODO: استبدال بـ -> POST إلى n8n webhook: /webhook/add-debt
-  const newDebt = {
-    ...debt,
-    id: `d${Date.now()}`,
-    date: new Date().toISOString(),
-    status: "unpaid",
-    paidAmount: 0,
-  };
-  return newDebt;
+    if (!res.ok) {
+      throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
+    }
+
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : [];
+
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    throw new Error(
+      err.message === "Failed to fetch"
+        ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
+        : err.message
+    );
+  }
 }
 
 export async function recordPayment(debtId, amount) {
-  // TODO: استبدال بـ -> POST إلى n8n webhook: /webhook/pay-debt
-  const updated = debts.map((d) => {
-    if (d.id !== debtId) return d;
-    const paidAmount = d.paidAmount + amount;
-    const status = paidAmount >= d.amount ? "paid" : "partial";
-    return { ...d, paidAmount, status };
-  });
-  return updated.find((d) => d.id === debtId);
+  try {
+    const res = await fetch(ENDPOINTS.payDebt, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: debtId, amount }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`فشل تسجيل الدفعة (${res.status})`);
+    }
+    
+    const text = await res.text();
+    return text ? JSON.parse(text) : {};
+  } catch (err) {
+    throw new Error(
+      err.message === "Failed to fetch"
+        ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
+        : err.message
+    );
+  }
 }

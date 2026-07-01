@@ -90,7 +90,7 @@ export default function ProductsPage() {
   }
 
   return (
-    <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16, maxWidth: 714, margin: "auto" }}>
       <div className="section-header">
         <span className="section-title">إجمالي المنتجات</span>
         <span className="section-count">{products.length}</span>
