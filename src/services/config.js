@@ -1,5 +1,5 @@
 
-export const N8N_BASE_URL = "https://supermarket.app.n8n.cloud/webhook";
+export const N8N_BASE_URL = "https://supermarketmanger.app.n8n.cloud/webhook";
 
 export const ENDPOINTS = {
   recordSale: `${N8N_BASE_URL}/recordSale`,
