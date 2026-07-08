@@ -44,9 +44,12 @@ export default function SalePage() {
   const total = cartItems.reduce((sum, item) => sum + item.qty * (item.product?.sellPrice || 0), 0);
 
   function adjustQty(productId, delta, unit) {
+    const product = products.find((p) => p.id === productId);
+    const maxQty = product?.quantity ?? Infinity;
+
     setCart((prev) => {
       const current = prev[productId] || 0;
-      const next = Math.max(0, +(current + delta).toFixed(2));
+      const next = Math.max(0, Math.min(maxQty, +(current + delta).toFixed(2)));
       return { ...prev, [productId]: next };
     });
   }
@@ -56,12 +59,14 @@ export default function SalePage() {
   }
 
   function handleKgInput(productId, value, sellPrice, mode) {
+    const product = products.find((p) => p.id === productId);
+    const maxQty = product?.quantity ?? Infinity;
+
     const val = parseFloat(value) || 0;
-    if (mode === "shekel") {
-      setCart(prev => ({ ...prev, [productId]: +(val / sellPrice).toFixed(3) }));
-    } else {
-      setCart(prev => ({ ...prev, [productId]: +val.toFixed(2) }));
-    }
+    let qtyInKg = mode === "shekel" ? val / sellPrice : val;
+    qtyInKg = Math.max(0, Math.min(maxQty, +qtyInKg.toFixed(3)));
+
+    setCart(prev => ({ ...prev, [productId]: qtyInKg }));
   }
 
   async function handleConfirm() {
