@@ -6,10 +6,14 @@ const DEBTS_KEY = "mock_debts";
 
 
 // ---------- المنتجات ----------
-
 export async function getProducts() {
   try {
-    const res = await fetch(ENDPOINTS.getProducts, { method: "GET" });
+    const res = await fetch(ENDPOINTS.getProducts, {
+      method: "GET",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
+    });
 
       if (!res.ok) {
         throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
@@ -27,7 +31,6 @@ export async function getProducts() {
       );
     }
 }
-
 export async function addProduct(product) {
  
   const newProduct = { ...product, id: `p${Date.now()}` };
