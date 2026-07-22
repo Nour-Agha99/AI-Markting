@@ -4,7 +4,8 @@ import { getProducts, addProduct, updateProduct, deleteProduct } from "../servic
 
 const emptyForm = { name: "", buyPrice: "", sellPrice: "", quantity: "", unit: "piece", alertThreshold: "" };
 
-export default function ProductsPage() {
+export default function ProductsPage({ token, role }) {
+  const isAdmin = role === "admin";
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -16,18 +17,19 @@ export default function ProductsPage() {
 
   useEffect(() => {
     refresh();
-  }, []);
-  
+  }, [token]);
+
   function refresh() {
     setLoading(true);
-    setErrorMsg("");
-    getProducts()
+    setErrorMsg("");    
+    getProducts(token)
       .then(setProducts)
       .catch((err) => setErrorMsg(err.message || "ما قدرنا نجيب المنتجات."))
       .finally(() => setLoading(false));
   }
 
   function openAddForm() {
+    if (!isAdmin) return;
     setForm(emptyForm);
     setEditingId(null);
     setErrorMsg("");
@@ -35,6 +37,7 @@ export default function ProductsPage() {
   }
 
   function openEditForm(p) {
+    if (!isAdmin) return;
     setForm({
       name: p.name,
       buyPrice: p.buyPrice,
@@ -49,6 +52,8 @@ export default function ProductsPage() {
   }
 
   async function handleSave() {
+    if (!isAdmin) return;
+
     const payload = {
       name: form.name.trim(),
       buyPrice: parseFloat(form.buyPrice) || 0,
@@ -63,9 +68,9 @@ export default function ProductsPage() {
     setSaving(true);
     try {
       if (editingId) {
-        await updateProduct(editingId, payload);
+        await updateProduct(editingId, payload, token);
       } else {
-        await addProduct(payload);
+        await addProduct(payload, token);
       }
       setShowForm(false);
       refresh();
@@ -77,10 +82,11 @@ export default function ProductsPage() {
   }
 
   async function handleDelete(id) {
+    if (!isAdmin) return;
     setErrorMsg("");
     setDeletingId(id);
     try {
-      await deleteProduct(id);
+      await deleteProduct(id, token);
       refresh();
     } catch (err) {
       setErrorMsg(err.message || "ما قدرنا نحذف المنتج، حاول مرة ثانية.");
@@ -102,14 +108,16 @@ export default function ProductsPage() {
         </div>
       )}
 
-      <button
-        onClick={openAddForm}
-        className="btn-whatsapp"
-        style={{ background: "var(--color-primary)", justifyContent: "center" }}
-      >
-        <Plus size={18} />
-        إضافة منتج جديد
-      </button>
+      {isAdmin && (
+        <button
+          onClick={openAddForm}
+          className="btn-whatsapp"
+          style={{ background: "var(--color-primary)", justifyContent: "center" }}
+        >
+          <Plus size={18} />
+          إضافة منتج جديد
+        </button>
+      )}
 
       <div className="card" style={{ padding: 0 }}>
         {loading && (
@@ -119,7 +127,7 @@ export default function ProductsPage() {
         )}
         {!loading && products.length === 0 && (
           <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)" }}>
-            ما في منتجات بعد. ضيف أول منتج.
+            ما في منتجات بعد.
           </div>
         )}
         {products.map((p, idx) => {
@@ -130,14 +138,17 @@ export default function ProductsPage() {
               className="product-row"
               style={{ padding: "14px 16px", borderBottom: idx === products.length - 1 ? "none" : undefined }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} style={{ ...iconBtnStyle, opacity: deletingId === p.id ? 0.5 : 1 }}>
-                  <Trash2 size={15} color="var(--color-danger)" />
-                </button>
-                <button onClick={() => openEditForm(p)} style={iconBtnStyle}>
-                  <Edit2 size={15} color="var(--text-secondary)" />
-                </button>
-              </div>
+              {isAdmin ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} style={{ ...iconBtnStyle, opacity: deletingId === p.id ? 0.5 : 1 }}>
+                    <Trash2 size={15} color="var(--color-danger)" />
+                  </button>
+                  <button onClick={() => openEditForm(p)} style={iconBtnStyle}>
+                    <Edit2 size={15} color="var(--text-secondary)" />
+                  </button>
+                </div>
+              ) : ''}
+
               <div style={{ textAlign: "left" }}>
                 <div className="product-price">₪{p.sellPrice}</div>
                 <div className="product-meta" style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
@@ -153,7 +164,7 @@ export default function ProductsPage() {
         })}
       </div>
 
-      {showForm && (
+      {showForm && isAdmin && (
         <div style={overlayStyle} onClick={() => setShowForm(false)}>
           <div className="card" style={{ width: "100%", maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>

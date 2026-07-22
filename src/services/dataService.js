@@ -24,12 +24,13 @@ export async function loginUser({ username, password }) {
   return data[0];
 }
 // ---------- المنتجات ----------
-export async function getProducts() {
+export async function getProducts(token) {
   try {
     const res = await fetch(ENDPOINTS.getProducts, {
       method: "GET",
       headers: {
         "ngrok-skip-browser-warning": "true",
+        "Authorization": `Bearer ${token}`,
       },
     });
 
