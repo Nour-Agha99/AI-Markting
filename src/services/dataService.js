@@ -4,7 +4,25 @@ const PRODUCTS_KEY = "mock_products";
 const SALES_KEY = "mock_sales";
 const DEBTS_KEY = "mock_debts";
 
+export async function loginUser({ username, password }) {
+  const response = await fetch(ENDPOINTS.loginUser, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', "ngrok-skip-browser-warning": "true" },
+    body: JSON.stringify({ username, password }),
+  });
 
+  if (!response.ok) {
+    throw new Error('فشل الاتصال بالسيرفر');
+  }
+
+  const data = await response.json();
+
+  if (!data[0].success) {
+    throw new Error('بيانات الدخول غير صحيحة');
+  }
+
+  return data[0];
+}
 // ---------- المنتجات ----------
 export async function getProducts() {
   try {
