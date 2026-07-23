@@ -14,7 +14,7 @@ const PAYMENT_TIMING = [
   { id: "debt", label: "دين / لاحقاً" },
 ];
 
-export default function SalePage({token}) {
+export default function SalePage({ token }) {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({});
   const [cartMode, setCartMode] = useState({}); // { productId: 'kg' | 'shekel' }
@@ -31,7 +31,9 @@ export default function SalePage({token}) {
   const isDebt = paymentTiming === "debt";
 
   useEffect(() => {
-    getProducts(token).then(setProducts);
+    getProducts(token)
+      .then(setProducts)
+      .catch((err) => setErrorMsg(err.message || "ما قدرنا نجيب المنتجات."));
   }, [token]);
 
   const cartItems = Object.entries(cart)
@@ -78,6 +80,7 @@ export default function SalePage({token}) {
     setNameError(false);
     setConfirming(true);
     try {
+
       await recordSale({
         customerName: customerName.trim() || null,
         isDebt,
@@ -89,7 +92,7 @@ export default function SalePage({token}) {
         })),
         notes: notes.trim() || null,
         total,
-      });
+      }, token);
       setSuccessMsg(isDebt ? "تم تسجيل البيع كدين ✓" : "تم تسجيل البيع بنجاح ✓");
       setCart({});
       setCartMode({});
