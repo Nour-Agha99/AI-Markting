@@ -181,7 +181,7 @@ export async function getSales() {
   }
 }
 
-export async function recordSale(sale) {
+export async function recordSale(sale, token) {
 
   const newSale = {
     ...sale,
@@ -193,10 +193,17 @@ export async function recordSale(sale) {
   try {
     const res = await fetch(ENDPOINTS.recordSale, {
       method: "POST",
-      headers: { "ngrok-skip-browser-warning": "true", "Content-Type": "application/json" },
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify(newSale),
     });
 
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+    }
     if (!res.ok) {
       throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
     }
@@ -250,6 +257,7 @@ export async function getDebts(token) {
 
 export async function recordPayment(debtId, amount, token) {
   try {
+   
     const res = await fetch(ENDPOINTS.payDebt, {
       method: "POST",
       headers: {

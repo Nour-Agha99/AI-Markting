@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TabBar from "./components/TabBar";
 import LoginPage from "./pages/LoginPage";
 import SalePage from "./pages/SalePage";
@@ -12,24 +12,57 @@ const PAGE_TITLES = {
   debts: "الديون",
 };
 
+const SESSION_KEY = "auth_session";
+
 function App() {
   const [activeTab, setActiveTab] = useState("sale");
   const [authToken, setAuthToken] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [username, setUsername] = useState(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  // استرجاع الجلسة من sessionStorage عند تحميل التطبيق لأول مرة
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const { token, role, username: savedUsername } = JSON.parse(saved);
+        if (token) {
+          setAuthToken(token);
+          setUserRole(role);
+          setUsername(savedUsername);
+        }
+      }
+    } catch {
+      sessionStorage.removeItem(SESSION_KEY);
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
 
   const handleLogin = async ({ username, password }) => {
     const data = await loginUser({ username, password });
     setAuthToken(data.token);
     setUserRole(data.role);
     setUsername(data.username);
+
+    sessionStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({ token: data.token, role: data.role, username: data.username })
+    );
   };
 
   const handleLogout = () => {
     setAuthToken(null);
     setUserRole(null);
     setUsername(null);
+    sessionStorage.removeItem(SESSION_KEY);
   };
+
+  // منع وميض شاشة اللوجن قبل ما نتأكد من وجود جلسة محفوظة
+  if (!hydrated) {
+    return null;
+  }
 
   if (!authToken) {
     return <LoginPage onLogin={handleLogin} />;
