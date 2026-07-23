@@ -4,11 +4,13 @@ import LoginPage from "./pages/LoginPage";
 import SalePage from "./pages/SalePage";
 import ProductsPage from "./pages/ProductsPage";
 import DebtsPage from "./pages/DebtsPage";
+import HistoryPage from "./pages/HistoryPage";
 import { loginUser } from "./services/dataService";
 
 const PAGE_TITLES = {
-  sale: "تسجيل بيع",
+   sale: "تسجيل بيع",
   products: "المنتجات",
+  history: "السجل",
   debts: "الديون",
 };
 
@@ -144,6 +146,7 @@ function App() {
       <main style={{ flex: 1, overflowY: "auto", paddingBottom: 90 }}>
         {activeTab === "sale" && <SalePage token={authToken} role={userRole} />}
         {activeTab === "products" && <ProductsPage token={authToken} role={userRole} />}
+        {activeTab === "history" && <HistoryPage token={authToken} role={userRole} />}
         {activeTab === "debts" && <DebtsPage token={authToken} role={userRole} />}
       </main>
     </div>

@@ -1,8 +1,6 @@
 import { ENDPOINTS } from "./config";
 
-const PRODUCTS_KEY = "mock_products";
-const SALES_KEY = "mock_sales";
-const DEBTS_KEY = "mock_debts";
+// ---------- تسجيل الدخول ----------
 
 export async function loginUser({ username, password }) {
   const response = await fetch(ENDPOINTS.loginUser, {
@@ -23,7 +21,9 @@ export async function loginUser({ username, password }) {
 
   return data[0];
 }
+
 // ---------- المنتجات ----------
+
 export async function getProducts(token) {
   try {
     const res = await fetch(ENDPOINTS.getProducts, {
@@ -34,6 +34,9 @@ export async function getProducts(token) {
       },
     });
 
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+    }
     if (!res.ok) {
       throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
     }
@@ -50,8 +53,8 @@ export async function getProducts(token) {
     );
   }
 }
-export async function addProduct(product, token) {
 
+export async function addProduct(product, token) {
   const newProduct = { ...product, id: `p${Date.now()}` };
   let response;
   try {
@@ -157,13 +160,19 @@ export async function deleteProduct(id, token) {
 
 // ---------- المبيعات ----------
 
-export async function getSales() {
+export async function getSales(token) {
   try {
     const res = await fetch(ENDPOINTS.getSales, {
       method: "GET",
-      headers: { "ngrok-skip-browser-warning": "true" },
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        "Authorization": `Bearer ${token}`,
+      },
     });
 
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+    }
     if (!res.ok) {
       throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
     }
@@ -182,7 +191,6 @@ export async function getSales() {
 }
 
 export async function recordSale(sale, token) {
-
   const newSale = {
     ...sale,
     id: `s${Date.now()}`,
@@ -226,6 +234,7 @@ export async function recordSale(sale, token) {
 }
 
 // ---------- الديون ----------
+
 export async function getDebts(token) {
   try {
     const res = await fetch(ENDPOINTS.getDebts, {
@@ -245,6 +254,7 @@ export async function getDebts(token) {
 
     const text = await res.text();
     const data = text ? JSON.parse(text) : [];
+
     return Array.isArray(data) ? data : [];
   } catch (err) {
     throw new Error(
@@ -257,7 +267,6 @@ export async function getDebts(token) {
 
 export async function recordPayment(debtId, amount, token) {
   try {
-   
     const res = await fetch(ENDPOINTS.payDebt, {
       method: "POST",
       headers: {
@@ -277,6 +286,38 @@ export async function recordPayment(debtId, amount, token) {
 
     const text = await res.text();
     return text ? JSON.parse(text) : {};
+  } catch (err) {
+    throw new Error(
+      err.message === "Failed to fetch"
+        ? "ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وحاول مرة ثانية."
+        : err.message
+    );
+  }
+}
+
+// ---------- السجل ----------
+
+export async function getHistory(token) {
+  try {
+    const res = await fetch(ENDPOINTS.getHistory, {
+      method: "GET",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+    }
+    if (!res.ok) {
+      throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
+    }
+
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : [];
+    
+    return Array.isArray(data) ? data : [];
   } catch (err) {
     throw new Error(
       err.message === "Failed to fetch"

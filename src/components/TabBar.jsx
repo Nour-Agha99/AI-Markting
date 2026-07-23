@@ -1,8 +1,9 @@
-import { ShoppingBag, Package, Clock, AlertTriangle, BarChart2 } from "lucide-react";
+import { ShoppingBag, Package, Clock, AlertTriangle } from "lucide-react";
 
 const TABS = [
   { id: "sale", label: "بيع", icon: ShoppingBag },
   { id: "products", label: "منتجات", icon: Package },
+  { id: "history", label: "السجل", icon: Clock },
   { id: "debts", label: "الديون", icon: AlertTriangle },
 ];
 

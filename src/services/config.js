@@ -11,5 +11,6 @@ export const ENDPOINTS = {
   deleteProduct: `${N8N_BASE_URL}/deleteProduct`,
   getDebts: `${N8N_BASE_URL}/getDebts`,
   payDebt: `${N8N_BASE_URL}/payDebt`,
-  putDebt: `${N8N_BASE_URL}/putDebt`
+  putDebt: `${N8N_BASE_URL}/putDebt`,
+  getHistory: `${N8N_BASE_URL}/getHistory`,
 };
