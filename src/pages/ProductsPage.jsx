@@ -36,20 +36,20 @@ export default function ProductsPage({ token, role }) {
     setShowForm(true);
   }
 
-  function openEditForm(p) {
-    if (!isAdmin) return;
-    setForm({
-      name: p.name,
-      buyPrice: p.buyPrice,
-      sellPrice: p.sellPrice,
-      quantity: p.quantity,
-      unit: p.unit,
-      alertThreshold: p.alertThreshold,
-    });
-    setEditingId(p.id);
-    setErrorMsg("");
-    setShowForm(true);
-  }
+ function openEditForm(p) {
+  if (!isAdmin) return;
+  setForm({
+    name: p.name ?? "",
+    buyPrice: p.buyPrice ?? p.buy_price ?? "",
+    sellPrice: p.sellPrice ?? "",
+    quantity: p.quantity ?? "",
+    unit: p.unit ?? "piece",
+    alertThreshold: p.alertThreshold ?? "",
+  });
+  setEditingId(p.id);
+  setErrorMsg("");
+  setShowForm(true);
+}
 
   async function handleSave() {
     if (!isAdmin) return;

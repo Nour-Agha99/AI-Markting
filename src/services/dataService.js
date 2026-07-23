@@ -50,23 +50,29 @@ export async function getProducts(token) {
     );
   }
 }
-export async function addProduct(product) {
+export async function addProduct(product, token) {
 
   const newProduct = { ...product, id: `p${Date.now()}` };
   let response;
   try {
     const res = await fetch(ENDPOINTS.addProduct, {
       method: "PUT",
-      headers: { "ngrok-skip-browser-warning": "true", "Content-Type": "application/json" },
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify(newProduct),
     });
 
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+    }
     if (!res.ok) {
       throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
     }
 
     const text = await res.text();
-
     try {
       response = text ? JSON.parse(text) : null;
     } catch {
@@ -83,21 +89,27 @@ export async function addProduct(product) {
   return { ...newProduct, serverResponse: response };
 }
 
-export async function updateProduct(id, changes) {
+export async function updateProduct(id, changes, token) {
   let response;
   try {
     const res = await fetch(ENDPOINTS.editProduct, {
       method: "PUT",
-      headers: { "ngrok-skip-browser-warning": "true", "Content-Type": "application/json" },
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify({ id, ...changes }),
     });
 
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+    }
     if (!res.ok) {
       throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
     }
 
     const text = await res.text();
-
     try {
       response = text ? JSON.parse(text) : null;
     } catch {
@@ -114,14 +126,21 @@ export async function updateProduct(id, changes) {
   return { id, ...changes, serverResponse: response };
 }
 
-export async function deleteProduct(id) {
+export async function deleteProduct(id, token) {
   try {
     const res = await fetch(ENDPOINTS.deleteProduct, {
       method: "DELETE",
-      headers: { "ngrok-skip-browser-warning": "true", "Content-Type": "application/json" },
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify({ id }),
     });
 
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+    }
     if (!res.ok) {
       throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
     }
