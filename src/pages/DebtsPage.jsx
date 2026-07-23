@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Clock, CheckCircle2, X } from "lucide-react";
 import { getDebts, recordPayment } from "../services/dataService";
 
-export default function DebtsPage() {
+export default function DebtsPage({ token, role }) {
   const [debts, setDebts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState(null);
@@ -10,36 +10,36 @@ export default function DebtsPage() {
   const [payingLoading, setPayingLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  useEffect(() => {
+ useEffect(() => {
+  refresh();
+}, [token]);
+
+function refresh() {
+  setLoading(true);
+  getDebts(token)
+    .then((data) => setDebts(data.sort((a, b) => new Date(b.date) - new Date(a.date))))
+    .catch((err) => setErrorMsg(err.message))
+    .finally(() => setLoading(false));
+}
+
+async function handlePay(debt, full) {
+  const paid = Number(debt.max_paidAmount) || 0;
+  const remaining = debt.sum_lineTotal - paid;
+  const amount = full ? remaining : parseFloat(payAmount);
+  if (!amount || amount <= 0) return;
+
+  setPayingLoading(true);
+  try {
+    await recordPayment(debt.id, amount, token);
+    setPayingId(null);
+    setPayAmount("");
     refresh();
-  }, []);
-
-  function refresh() {
-    setLoading(true);
-    getDebts()
-      .then((data) => setDebts(data.sort((a, b) => new Date(b.date) - new Date(a.date))))
-      .catch((err) => setErrorMsg(err.message))
-      .finally(() => setLoading(false));
+  } catch (err) {
+    setErrorMsg(err.message);
+  } finally {
+    setPayingLoading(false);
   }
-
-  async function handlePay(debt, full) {
-    const paid = Number(debt.max_paidAmount) || 0;
-    const remaining = debt.sum_lineTotal - paid;
-    const amount = full ? remaining : parseFloat(payAmount);
-    if (!amount || amount <= 0) return;
-
-    setPayingLoading(true);
-    try {
-      await recordPayment(debt.id, amount);
-      setPayingId(null);
-      setPayAmount("");
-      refresh();
-    } catch (err) {
-      setErrorMsg(err.message);
-    } finally {
-      setPayingLoading(false);
-    }
-  }
+}
 
   const debtsWithStatus = debts.map((d) => {
     const paid = Number(d.max_paidAmount) || 0;

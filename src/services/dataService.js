@@ -219,21 +219,25 @@ export async function recordSale(sale) {
 }
 
 // ---------- الديون ----------
-
-export async function getDebts() {
+export async function getDebts(token) {
   try {
     const res = await fetch(ENDPOINTS.getDebts, {
       method: "GET",
-      headers: { "ngrok-skip-browser-warning": "true" },
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        "Authorization": `Bearer ${token}`,
+      },
     });
 
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+    }
     if (!res.ok) {
       throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
     }
 
     const text = await res.text();
     const data = text ? JSON.parse(text) : [];
-
     return Array.isArray(data) ? data : [];
   } catch (err) {
     throw new Error(
@@ -244,14 +248,21 @@ export async function getDebts() {
   }
 }
 
-export async function recordPayment(debtId, amount) {
+export async function recordPayment(debtId, amount, token) {
   try {
     const res = await fetch(ENDPOINTS.payDebt, {
       method: "POST",
-      headers: { "ngrok-skip-browser-warning": "true", "Content-Type": "application/json" },
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify({ id: debtId, amount }),
     });
 
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+    }
     if (!res.ok) {
       throw new Error(`فشل تسجيل الدفعة (${res.status})`);
     }
