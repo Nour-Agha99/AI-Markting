@@ -24,19 +24,27 @@ const TYPE_META = {
 
 function isWithinRange(dateStr, filter) {
   if (filter === "all") return true;
+
   const date = new Date(dateStr);
+  date.setHours(0, 0, 0, 0);
+
   const now = new Date();
-  if (filter === "day") return date.toDateString() === now.toDateString();
+  now.setHours(0, 0, 0, 0);
+
+  if (filter === "day") return date.getTime() === now.getTime();
+
   if (filter === "week") {
     const weekAgo = new Date(now);
     weekAgo.setDate(now.getDate() - 7);
     return date >= weekAgo;
   }
+
   if (filter === "month") {
     const monthAgo = new Date(now);
     monthAgo.setMonth(now.getMonth() - 1);
     return date >= monthAgo;
   }
+
   return true;
 }
 
@@ -55,9 +63,14 @@ function dayKey(dateStr) {
   return new Date(dateStr).toDateString();
 }
 
-function itemsSummary(items) {
+function itemsSummary(items, maxItems = 3) {
   if (!items || items.length === 0) return "";
-  return items.map((it) => `${it.name} ${it.qty}${it.unit === "kg" ? "كغ" : ""}`).join(" · ");
+  
+  const shown = items.slice(0, maxItems);
+  const summary = shown.map((it) => `${it.name} ${it.qty}${it.unit === "kg" ? "كغ" : ""}`).join(" · ");
+  
+  const remaining = items.length - maxItems;
+  return remaining > 0 ? `${summary} +${remaining} منتجات أخرى` : summary;
 }
 
 export default function HistoryPage({ token }) {
@@ -66,10 +79,21 @@ export default function HistoryPage({ token }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [visibleCount, setVisibleCount] = useState(30);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     refresh();
   }, [token]);
+
+  useEffect(() => {
+  setVisibleCount(30);
+}, [dateFilter, debouncedSearch]);
 
   function refresh() {
     setLoading(true);
@@ -81,34 +105,48 @@ export default function HistoryPage({ token }) {
   }
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     return history.filter((r) => {
       if (!isWithinRange(r.date, dateFilter)) return false;
       if (q && !(r.customerName || "").toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [history, dateFilter, search]);
+  }, [history, dateFilter, debouncedSearch]);
 
   const groups = useMemo(() => {
     const map = new Map();
-    for (const r of filtered) {
+    for (const r of filtered.slice(0, visibleCount)) {
       const key = dayKey(r.date);
       if (!map.has(key)) map.set(key, { label: dayLabel(r.date), items: [] });
       map.get(key).items.push(r);
     }
     return Array.from(map.values());
-  }, [filtered]);
-
+  }, [filtered, visibleCount]);
+  
   return (
     <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16, maxWidth: 714, margin: "auto" }}>
       <div className="section-header">
         <span className="section-title">السجل</span>
-        <span className="section-count">{filtered.length}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span className="section-count">{filtered.length > visibleCount && (
+            <button
+              onClick={() => setVisibleCount((v) => v + 30)}
+              className="pill"
+              style={{ justifyContent: "center", width: "100%" }}
+            >
+              عرض المزيد ({filtered.length - visibleCount} متبقي)
+            </button>
+          )}</span>
+          <button onClick={refresh} disabled={loading} style={{ ...iconBtnStyle, opacity: loading ? 0.5 : 1 }}>
+            <RefreshCw size={16} className={loading ? "spin" : ""} />
+          </button>
+        </div>
       </div>
 
       {errorMsg && (
         <div className="card" style={{ background: "var(--color-danger-soft)", color: "var(--color-danger)", textAlign: "center", fontWeight: 600 }}>
           {errorMsg}
+
         </div>
       )}
 
@@ -213,4 +251,14 @@ const inputStyle = {
   color: "var(--text-primary)",
   fontSize: 14,
   outline: "none",
+};
+const iconBtnStyle = {
+  width: 30,
+  height: 30,
+  borderRadius: "50%",
+  border: "none",
+  background: "var(--bg-pill)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
