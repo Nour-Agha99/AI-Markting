@@ -9,17 +9,15 @@ export async function loginUser({ username, password }) {
     body: JSON.stringify({ username, password }),
   });
 
-  if (!response.ok) {
-    throw new Error('فشل الاتصال بالسيرفر');
-  }
-
   const data = await response.json();
 
-  if (!data[0].success) {
-    throw new Error('بيانات الدخول غير صحيحة');
+  if (!data.success) {
+    const error = new Error(data.error || 'بيانات الدخول غير صحيحة');
+    error.code = data.code || 'UNKNOWN_ERROR';
+    throw error;
   }
 
-  return data[0];
+  return data;
 }
 
 // ---------- المنتجات ----------

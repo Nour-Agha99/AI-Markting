@@ -89,14 +89,17 @@ export default function LoginPage({ onLogin }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setErrorCode('');
 
     if (!username.trim() || !password.trim()) {
       setError('يرجى إدخال اسم المستخدم وكلمة المرور');
+      setErrorCode('MISSING_FIELDS');
       return;
     }
 
@@ -105,11 +108,25 @@ export default function LoginPage({ onLogin }) {
       await onLogin?.({ username, password });
       setPassword('');
     } catch (err) {
-      setError('بيانات الدخول غير صحيحة');
+      setError(err.message || 'بيانات الدخول غير صحيحة');
+      setErrorCode(err.code || 'UNKNOWN_ERROR');
     } finally {
       setLoading(false);
     }
   };
+
+  function getErrorStyle(code) {
+    switch (code) {
+      case 'SESSION_ERROR':
+      case 'SERVER_ERROR':
+      case 'UNKNOWN_ERROR':
+        return { color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)' }; // برتقالي - خطأ نظام
+      case 'MISSING_FIELDS':
+        return { color: '#7c869c', background: 'rgba(124, 134, 156, 0.1)' }; // رمادي - تنبيه بسيط
+      default:
+        return { color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' }; // أحمر - بيانات غلط
+    }
+  }
 
   return (
     <div style={styles.page}>
@@ -167,7 +184,15 @@ export default function LoginPage({ onLogin }) {
             </div>
 
             {error && (
-              <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 16 }}>{error}</p>
+              <p style={{
+                ...getErrorStyle(errorCode),
+                fontSize: 13,
+                marginBottom: 16,
+                padding: '10px 14px',
+                borderRadius: 10,
+              }}>
+                {error}
+              </p>
             )}
 
             <div style={styles.rowBetween}>
