@@ -11,9 +11,9 @@ export async function loginUser({ username, password }) {
 
   const data = await response.json();
 
-  if (!data.success) {
-    const error = new Error(data.error || 'بيانات الدخول غير صحيحة');
-    error.code = data.code || 'UNKNOWN_ERROR';
+  if (!data[0]?.success) {
+    const error = new Error(data[0].error || 'بيانات الدخول غير صحيحة');
+    error.code = data[0].code || 'UNKNOWN_ERROR';
     throw error;
   }
 
