@@ -11,9 +11,9 @@ export async function loginUser({ username, password }) {
 
   const data = await response.json();
 
-  if (!data[0]?.success) {
-    const error = new Error(data[0].error || 'بيانات الدخول غير صحيحة');
-    error.code = data[0].code || 'UNKNOWN_ERROR';
+  if (!data?.success) {
+    const error = new Error(data.error || 'بيانات الدخول غير صحيحة');
+    error.code = data.code || 'UNKNOWN_ERROR';
     throw error;
   }
 
@@ -24,11 +24,13 @@ export async function loginUser({ username, password }) {
 
 export async function getProducts(token) {
   try {
+    console.log(token);
+    
     const res = await fetch(ENDPOINTS.getProducts, {
       method: "GET",
       headers: {
         "ngrok-skip-browser-warning": "true",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": token,
       },
     });
 
@@ -40,7 +42,8 @@ export async function getProducts(token) {
     }
 
     const text = await res.text();
-    const data = text ? JSON.parse(text) : [];
+    const object = text ? JSON.parse(text) : [];
+    const data = Array.isArray(object.products) ? object.products: [];
 
     return Array.isArray(data) ? data : [];
   } catch (err) {
@@ -61,7 +64,7 @@ export async function addProduct(product, token) {
       headers: {
         "ngrok-skip-browser-warning": "true",
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": token,
       },
       body: JSON.stringify(newProduct),
     });
@@ -98,7 +101,7 @@ export async function updateProduct(id, changes, token) {
       headers: {
         "ngrok-skip-browser-warning": "true",
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": token,
       },
       body: JSON.stringify({ id, ...changes }),
     });
@@ -134,7 +137,7 @@ export async function deleteProduct(id, token) {
       headers: {
         "ngrok-skip-browser-warning": "true",
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": token,
       },
       body: JSON.stringify({ id }),
     });
@@ -164,7 +167,7 @@ export async function getSales(token) {
       method: "GET",
       headers: {
         "ngrok-skip-browser-warning": "true",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": token,
       },
     });
 
@@ -202,7 +205,7 @@ export async function recordSale(sale, token) {
       headers: {
         "ngrok-skip-browser-warning": "true",
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": token,
       },
       body: JSON.stringify(newSale),
     });
@@ -239,7 +242,7 @@ export async function getDebts(token) {
       method: "GET",
       headers: {
         "ngrok-skip-browser-warning": "true",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": token,
       },
     });
 
@@ -270,7 +273,7 @@ export async function recordPayment(debtId, amount, token) {
       headers: {
         "ngrok-skip-browser-warning": "true",
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": token,
       },
       body: JSON.stringify({ id: debtId, amount }),
     });
@@ -301,7 +304,7 @@ export async function getHistory(token) {
       method: "GET",
       headers: {
         "ngrok-skip-browser-warning": "true",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": token,
       },
     });
 

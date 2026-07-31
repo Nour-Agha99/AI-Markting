@@ -14,7 +14,7 @@ const PAYMENT_TIMING = [
   { id: "debt", label: "دين / لاحقاً" },
 ];
 
-export default function SalePage({ token }) {
+export default function SalePage({ token, mainProducts }) {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({});
   const [cartMode, setCartMode] = useState({}); // { productId: 'kg' | 'shekel' }
@@ -31,9 +31,7 @@ export default function SalePage({ token }) {
   const isDebt = paymentTiming === "debt";
 
   useEffect(() => {
-    getProducts(token)
-      .then(setProducts)
-      .catch((err) => setErrorMsg(err.message || "ما قدرنا نجيب المنتجات."));
+    setProducts(mainProducts || []);
   }, [token]);
 
   const cartItems = Object.entries(cart)

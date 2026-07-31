@@ -22,6 +22,7 @@ function App() {
   const [userRole, setUserRole] = useState(null);
   const [username, setUsername] = useState(null);
   const [hydrated, setHydrated] = useState(false);
+  const [mainProducts, setMainProducts] = useState([]);
 
   // استرجاع الجلسة من sessionStorage عند تحميل التطبيق لأول مرة
   useEffect(() => {
@@ -44,6 +45,7 @@ function App() {
 
   const handleLogin = async ({ username, password }) => {
     const data = await loginUser({ username, password });
+    setMainProducts(data.products || []);    
     setAuthToken(data.token);
     setUserRole(data.role);
     setUsername(data.username);
@@ -144,7 +146,7 @@ function App() {
       </div>
 
       <main style={{ flex: 1, overflowY: "auto", paddingBottom: 90 }}>
-        {activeTab === "sale" && <SalePage token={authToken} role={userRole} />}
+        {activeTab === "sale" && <SalePage mainProducts={mainProducts} token={authToken} role={userRole} />}
         {activeTab === "products" && <ProductsPage token={authToken} role={userRole} />}
         {activeTab === "history" && <HistoryPage token={authToken} role={userRole} />}
         {activeTab === "debts" && <DebtsPage token={authToken} role={userRole} />}
