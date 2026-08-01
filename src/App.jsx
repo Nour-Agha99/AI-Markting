@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import TabBar from "./components/TabBar";
 import LoginPage from "./pages/LoginPage";
 import SalePage from "./pages/SalePage";
 import ProductsPage from "./pages/ProductsPage";
 import DebtsPage from "./pages/DebtsPage";
 import HistoryPage from "./pages/HistoryPage";
-import { loginUser } from "./services/dataService";
+import { loginUser, logoutUser, getProducts } from "./services/dataService";
 
 const PAGE_TITLES = {
-   sale: "تسجيل بيع",
+  sale: "تسجيل بيع",
   products: "المنتجات",
   history: "السجل",
   debts: "الديون",
@@ -23,32 +23,70 @@ function App() {
   const [username, setUsername] = useState(null);
   const [hydrated, setHydrated] = useState(false);
   const [mainProducts, setMainProducts] = useState([]);
+  const [sessionNotice, setSessionNotice] = useState("");
 
-  // استرجاع الجلسة من sessionStorage عند تحميل التطبيق لأول مرة
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const { token, role, username: savedUsername } = JSON.parse(saved);
-        if (token) {
-          setAuthToken(token);
-          setUserRole(role);
-          setUsername(savedUsername);
+    async function restoreSession() {
+      try {
+        const saved = sessionStorage.getItem(SESSION_KEY);
+        if (saved) {
+          const { token, role, username: savedUsername } = JSON.parse(saved);
+          if (token) {
+            setAuthToken(token);
+            setUserRole(role);
+            setUsername(savedUsername);
+
+            try {
+              const products = await getProducts(token);
+              setMainProducts(products);
+            } catch (err) {
+              if (err?.code === "SESSION_EXPIRED") {
+                handleLogout();
+              }
+
+            }
+          }
         }
+      } catch {
+        sessionStorage.removeItem(SESSION_KEY);
+      } finally {
+        setHydrated(true);
       }
-    } catch {
-      sessionStorage.removeItem(SESSION_KEY);
-    } finally {
-      setHydrated(true);
     }
+
+    restoreSession();
   }, []);
+
+  const refreshProducts = useCallback(async () => {
+    if (!authToken) return;
+    try {
+      const products = await getProducts(token);
+      setMainProducts(products);
+    } catch (err) {
+      if (err?.code === "SESSION_EXPIRED") {
+        handleLogout();
+      }
+    }
+  }, [authToken]);
+
+
+  // أي دالة API بترمي SESSION_EXPIRED بتعمل logout تلقائي من هون
+  function handleApiError(err) {
+    if (err?.code === "SESSION_EXPIRED") {
+      setSessionNotice("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+      handleLogout();
+    }
+    // بنرجع الخطأ نفسه عشان الصفحة يلي نادت تقدر تعرضه لو مش session error
+    throw err;
+  }
 
   const handleLogin = async ({ username, password }) => {
     const data = await loginUser({ username, password });
-    setMainProducts(data.products || []);    
+    setMainProducts(data.products || []);
     setAuthToken(data.token);
     setUserRole(data.role);
     setUsername(data.username);
+    setSessionNotice("");
 
     sessionStorage.setItem(
       SESSION_KEY,
@@ -57,99 +95,56 @@ function App() {
   };
 
   const handleLogout = () => {
+    if (authToken) logoutUser(authToken);
     setAuthToken(null);
     setUserRole(null);
     setUsername(null);
+    setMainProducts([]);
     sessionStorage.removeItem(SESSION_KEY);
   };
 
-  // منع وميض شاشة اللوجن قبل ما نتأكد من وجود جلسة محفوظة
-  if (!hydrated) {
-    return null;
-  }
+  if (!hydrated) return null;
 
   if (!authToken) {
-    return <LoginPage onLogin={handleLogin} />;
+    return (
+      <>
+        {sessionNotice && (
+          <div style={{ position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)", background: "var(--color-warning-soft)", color: "var(--color-warning)", padding: "10px 18px", borderRadius: 10, fontSize: 13, zIndex: 999 }}>
+            {sessionNotice}
+          </div>
+        )}
+        <LoginPage onLogin={handleLogin} />
+      </>
+    );
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "var(--bg-app)",
-        display: "flex",
-        flexDirection: "column",
-        maxWidth: "860px",
-        margin: "0 auto",
-        marginBlock: "100px",
-      }}
-    >
-      <header
-        style={{
-          padding: "16px 16px 12px",
-          borderBottom: "1px solid var(--border-subtle)",
-          background: "var(--bg-app)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+    <div style={{ minHeight: "100vh", background: "var(--bg-app)", display: "flex", flexDirection: "column", maxWidth: "860px", margin: "0 auto", marginBlock: "100px" }}>
+      <header style={{ padding: "16px 16px 12px", borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-app)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h1 style={{ fontSize: 18, fontWeight: 700 }}>{PAGE_TITLES[activeTab]}</h1>
-
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              padding: "5px 12px",
-              borderRadius: 8,
-              background: userRole === "admin" ? "rgba(59,130,246,0.12)" : "rgba(156,163,175,0.12)",
-              color: userRole === "admin" ? "#60a5fa" : "#d1d5db",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {username}
-            {userRole === "admin" ? "مدير" : "محاسب"}
+          <span style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: userRole === "admin" ? "rgba(59,130,246,0.12)" : "rgba(156,163,175,0.12)", color: userRole === "admin" ? "#60a5fa" : "#d1d5db", whiteSpace: "nowrap" }}>
+            {username} {userRole === "admin" ? "مدير" : "محاسب"}
           </span>
-
-          <button
-            onClick={handleLogout}
-            style={{
-              background: "rgba(239,68,68,0.1)",
-              border: "1px solid rgba(239,68,68,0.25)",
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              color: "#ef4444",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <button onClick={handleLogout} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 500, cursor: "pointer", color: "#ef4444", whiteSpace: "nowrap" }}>
             خروج
           </button>
         </div>
       </header>
 
-      <div
-        style={{
-          position: "fixed",
-          top: "20px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "100%",
-          maxWidth: 660,
-          zIndex: 200,
-        }}
-      >
+      <div style={{ position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 660, zIndex: 200 }}>
         <TabBar activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
       <main style={{ flex: 1, overflowY: "auto", paddingBottom: 90 }}>
-        {activeTab === "sale" && <SalePage mainProducts={mainProducts} token={authToken} role={userRole} />}
-        {activeTab === "products" && <ProductsPage token={authToken} role={userRole} />}
-        {activeTab === "history" && <HistoryPage token={authToken} role={userRole} />}
-        {activeTab === "debts" && <DebtsPage token={authToken} role={userRole} />}
+        {activeTab === "sale" && (
+          <SalePage mainProducts={mainProducts} refreshProducts={refreshProducts} onApiError={handleApiError} token={authToken} role={userRole} />
+        )}
+        {activeTab === "products" && (
+          <ProductsPage mainProducts={mainProducts} refreshProducts={refreshProducts} onApiError={handleApiError} token={authToken} role={userRole} />
+        )}
+        {activeTab === "history" && <HistoryPage onApiError={handleApiError} token={authToken} role={userRole} />}
+        {activeTab === "debts" && <DebtsPage onApiError={handleApiError} token={authToken} role={userRole} />}
       </main>
     </div>
   );

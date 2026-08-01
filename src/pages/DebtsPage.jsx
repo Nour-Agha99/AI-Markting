@@ -2,44 +2,61 @@ import { useState, useEffect } from "react";
 import { Clock, CheckCircle2, X } from "lucide-react";
 import { getDebts, recordPayment } from "../services/dataService";
 
-export default function DebtsPage({ token, role }) {
+export default function DebtsPage({ token, role, onApiError }) {
   const [debts, setDebts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState(null);
   const [payAmount, setPayAmount] = useState("");
   const [payingLoading, setPayingLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
- useEffect(() => {
-  refresh();
-}, [token]);
-
-function refresh() {
-  setLoading(true);
-  getDebts(token)
-    .then((data) => setDebts(data.sort((a, b) => new Date(b.date) - new Date(a.date))))
-    .catch((err) => setErrorMsg(err.message))
-    .finally(() => setLoading(false));
-}
-
-async function handlePay(debt, full) {
-  const paid = Number(debt.max_paidAmount) || 0;
-  const remaining = debt.sum_lineTotal - paid;
-  const amount = full ? remaining : parseFloat(payAmount);
-  if (!amount || amount <= 0) return;
-
-  setPayingLoading(true);
-  try {
-    await recordPayment(debt.id, amount, token);
-    setPayingId(null);
-    setPayAmount("");
+  const [confirmFullId, setConfirmFullId] = useState(null); 
+  
+  useEffect(() => {
     refresh();
-  } catch (err) {
-    setErrorMsg(err.message);
-  } finally {
-    setPayingLoading(false);
+  }, [token]);
+
+  function refresh() {
+    setLoading(true);
+    getDebts(token)
+      .then((data) => setDebts(data.sort((a, b) => new Date(b.date) - new Date(a.date))))
+      .catch((err) => {
+        if (err?.code !== "SESSION_EXPIRED") {
+          setErrorMsg(err.message);
+        } else {
+          onApiError?.(err);
+        }
+      })
+      .finally(() => setLoading(false));
   }
-}
+
+  async function handlePay(debt, full) {
+    const paid = Number(debt.max_paidAmount) || 0;
+    const remaining = debt.sum_lineTotal - paid;
+    const amount = full ? remaining : parseFloat(payAmount);
+
+    if (!amount || amount <= 0) return;
+    if (amount > remaining) { 
+      setErrorMsg("المبلغ المدخل أكبر من المتبقي على الزبون.");
+      return;
+    }
+
+    setPayingLoading(true);
+    try {
+      await recordPayment(debt.id, amount, token);
+      setPayingId(null);
+      setPayAmount("");
+      setConfirmFullId(null);
+      refresh();
+    } catch (err) {
+      if (err?.code !== "SESSION_EXPIRED") {
+        setErrorMsg(err.message);
+      } else {
+        onApiError?.(err);
+      }
+    } finally {
+      setPayingLoading(false);
+    }
+  }
 
   const debtsWithStatus = debts.map((d) => {
     const paid = Number(d.max_paidAmount) || 0;
@@ -63,15 +80,9 @@ async function handlePay(debt, full) {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {loading && (
-          <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>
-            جاري التحميل...
-          </div>
-        )}
+        {loading && <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>جاري التحميل...</div>}
         {!loading && debtsWithStatus.length === 0 && (
-          <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>
-            ما في ديون مسجلة.
-          </div>
+          <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>ما في ديون مسجلة.</div>
         )}
         {debtsWithStatus.map((d) => (
           <div key={d.id} className="card">
@@ -106,38 +117,33 @@ async function handlePay(debt, full) {
                   type="number"
                   placeholder="المبلغ"
                   value={payAmount}
+                  max={d.remaining}
                   onChange={(e) => setPayAmount(e.target.value)}
                   disabled={payingLoading}
                   style={{ ...inputStyle, flex: 1 }}
                 />
-                <button
-                  onClick={() => handlePay(d, false)}
-                  disabled={payingLoading}
-                  className="pill"
-                  style={{ background: "var(--color-primary)", opacity: payingLoading ? 0.6 : 1 }}
-                >
+                <button onClick={() => handlePay(d, false)} disabled={payingLoading} className="pill" style={{ background: "var(--color-primary)", opacity: payingLoading ? 0.6 : 1 }}>
                   {payingLoading ? "جاري السداد..." : "سداد"}
                 </button>
                 <button onClick={() => setPayingId(null)} disabled={payingLoading} style={iconBtnStyle}>
                   <X size={16} />
                 </button>
               </div>
+            ) : confirmFullId === d.id ? (
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <button onClick={() => handlePay(d, true)} disabled={payingLoading} className="pill" style={{ flex: 1, justifyContent: "center", background: "var(--color-success)", color: "white", opacity: payingLoading ? 0.6 : 1 }}>
+                  {payingLoading ? "جاري..." : `تأكيد سداد ₪${d.remaining.toFixed(2)}`}
+                </button>
+                <button onClick={() => setConfirmFullId(null)} disabled={payingLoading} style={iconBtnStyle}>
+                  <X size={16} />
+                </button>
+              </div>
             ) : (
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <button
-                  onClick={() => handlePay(d, true)}
-                  disabled={payingLoading}
-                  className="pill"
-                  style={{ flex: 1, justifyContent: "center", background: "var(--color-success-soft)", color: "var(--color-success)", opacity: payingLoading ? 0.6 : 1 }}
-                >
-                  {payingLoading ? "جاري..." : "سداد كامل"}
+                <button onClick={() => setConfirmFullId(d.id)} className="pill" style={{ flex: 1, justifyContent: "center", background: "var(--color-success-soft)", color: "var(--color-success)" }}>
+                  سداد كامل
                 </button>
-                <button
-                  onClick={() => setPayingId(d.id)}
-                  disabled={payingLoading}
-                  className="pill"
-                  style={{ flex: 1, justifyContent: "center", opacity: payingLoading ? 0.6 : 1 }}
-                >
+                <button onClick={() => setPayingId(d.id)} className="pill" style={{ flex: 1, justifyContent: "center" }}>
                   سداد جزئي
                 </button>
               </div>
@@ -149,24 +155,5 @@ async function handlePay(debt, full) {
   );
 }
 
-const inputStyle = {
-  width: "100%",
-  background: "var(--bg-pill)",
-  border: "1px solid var(--border-subtle)",
-  borderRadius: "var(--radius-sm)",
-  padding: "10px 12px",
-  color: "var(--text-primary)",
-  fontSize: 14,
-  outline: "none",
-};
-
-const iconBtnStyle = {
-  width: 30,
-  height: 30,
-  borderRadius: "50%",
-  border: "none",
-  background: "var(--bg-pill)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
+const inputStyle = { width: "100%", background: "var(--bg-pill)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", padding: "10px 12px", color: "var(--text-primary)", fontSize: 14, outline: "none" };
+const iconBtnStyle = { width: 30, height: 30, borderRadius: "50%", border: "none", background: "var(--bg-pill)", display: "flex", alignItems: "center", justifyContent: "center" };

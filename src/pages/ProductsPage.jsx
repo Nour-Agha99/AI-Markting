@@ -1,32 +1,23 @@
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, X, AlertTriangle } from "lucide-react";
-import { getProducts, addProduct, updateProduct, deleteProduct } from "../services/dataService";
+import { addProduct, updateProduct, deleteProduct } from "../services/dataService";
 
 const emptyForm = { name: "", buyPrice: "", sellPrice: "", quantity: "", unit: "piece", alertThreshold: "" };
 
-export default function ProductsPage({ token, role }) {
+export default function ProductsPage({ token, role, mainProducts, refreshProducts, onApiError }) {
   const isAdmin = role === "admin";
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null); // ← جديد
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    refresh();
-  }, [token]);
-
-  function refresh() {
-    setLoading(true);
-    setErrorMsg("");    
-    getProducts(token)
-      .then(setProducts)
-      .catch((err) => setErrorMsg(err.message || "ما قدرنا نجيب المنتجات."))
-      .finally(() => setLoading(false));
-  }
+    setProducts(mainProducts || []);
+  }, [mainProducts]);
 
   function openAddForm() {
     if (!isAdmin) return;
@@ -36,24 +27,23 @@ export default function ProductsPage({ token, role }) {
     setShowForm(true);
   }
 
- function openEditForm(p) {
-  if (!isAdmin) return;
-  setForm({
-    name: p.name ?? "",
-    buyPrice: p.buyPrice ?? p.buy_price ?? "",
-    sellPrice: p.sellPrice ?? "",
-    quantity: p.quantity ?? "",
-    unit: p.unit ?? "piece",
-    alertThreshold: p.alertThreshold ?? "",
-  });
-  setEditingId(p.id);
-  setErrorMsg("");
-  setShowForm(true);
-}
+  function openEditForm(p) {
+    if (!isAdmin) return;
+    setForm({
+      name: p.name ?? "",
+      buyPrice: p.buyPrice ?? p.buy_price ?? "",
+      sellPrice: p.sellPrice ?? "",
+      quantity: p.quantity ?? "",
+      unit: p.unit ?? "piece",
+      alertThreshold: p.alertThreshold ?? "",
+    });
+    setEditingId(p.id);
+    setErrorMsg("");
+    setShowForm(true);
+  }
 
   async function handleSave() {
     if (!isAdmin) return;
-
     const payload = {
       name: form.name.trim(),
       buyPrice: parseFloat(form.buyPrice) || 0,
@@ -73,9 +63,13 @@ export default function ProductsPage({ token, role }) {
         await addProduct(payload, token);
       }
       setShowForm(false);
-      refresh();
+      await refreshProducts();
     } catch (err) {
-      setErrorMsg(err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
+      if (err?.code !== "SESSION_EXPIRED") {
+        setErrorMsg(err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
+      } else {
+        onApiError?.(err);
+      }
     } finally {
       setSaving(false);
     }
@@ -87,9 +81,14 @@ export default function ProductsPage({ token, role }) {
     setDeletingId(id);
     try {
       await deleteProduct(id, token);
-      refresh();
+      setConfirmDeleteId(null);
+      await refreshProducts();
     } catch (err) {
-      setErrorMsg(err.message || "ما قدرنا نحذف المنتج، حاول مرة ثانية.");
+      if (err?.code !== "SESSION_EXPIRED") {
+        setErrorMsg(err.message || "ما قدرنا نحذف المنتج، حاول مرة ثانية.");
+      } else {
+        onApiError?.(err);
+      }
     } finally {
       setDeletingId(null);
     }
@@ -109,44 +108,48 @@ export default function ProductsPage({ token, role }) {
       )}
 
       {isAdmin && (
-        <button
-          onClick={openAddForm}
-          className="btn-whatsapp"
-          style={{ background: "var(--color-primary)", justifyContent: "center" }}
-        >
+        <button onClick={openAddForm} className="btn-whatsapp" style={{ background: "var(--color-primary)", justifyContent: "center" }}>
           <Plus size={18} />
           إضافة منتج جديد
         </button>
       )}
 
       <div className="card" style={{ padding: 0 }}>
-        {loading && (
-          <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)" }}>
-            جاري التحميل...
-          </div>
-        )}
-        {!loading && products.length === 0 && (
+        {products.length === 0 && (
           <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)" }}>
             ما في منتجات بعد.
           </div>
         )}
         {products.map((p, idx) => {
           const low = p.quantity <= p.alertThreshold;
+          const confirming = confirmDeleteId === p.id;
           return (
-            <div
-              key={p.id}
-              className="product-row"
-              style={{ padding: "14px 16px", borderBottom: idx === products.length - 1 ? "none" : undefined }}
-            >
+            <div key={p.id} className="product-row" style={{ padding: "14px 16px", borderBottom: idx === products.length - 1 ? "none" : undefined }}>
               {isAdmin ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} style={{ ...iconBtnStyle, opacity: deletingId === p.id ? 0.5 : 1 }}>
-                    <Trash2 size={15} color="var(--color-danger)" />
-                  </button>
-                  <button onClick={() => openEditForm(p)} style={iconBtnStyle}>
-                    <Edit2 size={15} color="var(--text-secondary)" />
-                  </button>
-                </div>
+                confirming ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <button
+                      onClick={() => handleDelete(p.id)}
+                      disabled={deletingId === p.id}
+                      className="pill"
+                      style={{ background: "var(--color-danger)", color: "white", fontSize: 12, padding: "6px 12px" }}
+                    >
+                      {deletingId === p.id ? "..." : "تأكيد الحذف"}
+                    </button>
+                    <button onClick={() => setConfirmDeleteId(null)} style={iconBtnStyle}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button onClick={() => setConfirmDeleteId(p.id)} style={iconBtnStyle}>
+                      <Trash2 size={15} color="var(--color-danger)" />
+                    </button>
+                    <button onClick={() => openEditForm(p)} style={iconBtnStyle}>
+                      <Edit2 size={15} color="var(--text-secondary)" />
+                    </button>
+                  </div>
+                )
               ) : ''}
 
               <div style={{ textAlign: "left" }}>
@@ -168,19 +171,13 @@ export default function ProductsPage({ token, role }) {
         <div style={overlayStyle} onClick={() => setShowForm(false)}>
           <div className="card" style={{ width: "100%", maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <span style={{ fontWeight: 700, fontSize: 16 }}>
-                {editingId ? "تعديل منتج" : "منتج جديد"}
-              </span>
-              <button onClick={() => setShowForm(false)} style={iconBtnStyle}>
-                <X size={18} />
-              </button>
+              <span style={{ fontWeight: 700, fontSize: 16 }}>{editingId ? "تعديل منتج" : "منتج جديد"}</span>
+              <button onClick={() => setShowForm(false)} style={iconBtnStyle}><X size={18} /></button>
             </div>
-
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <Field label="اسم المنتج">
                 <input style={inputStyle} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </Field>
-
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <Field label="سعر الشراء">
                   <input type="number" style={inputStyle} value={form.buyPrice} onChange={(e) => setForm({ ...form, buyPrice: e.target.value })} />
@@ -189,7 +186,6 @@ export default function ProductsPage({ token, role }) {
                   <input type="number" style={inputStyle} value={form.sellPrice} onChange={(e) => setForm({ ...form, sellPrice: e.target.value })} />
                 </Field>
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <Field label="الكمية">
                   <input type="number" style={inputStyle} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
@@ -201,23 +197,11 @@ export default function ProductsPage({ token, role }) {
                   </select>
                 </Field>
               </div>
-
               <Field label="حد التنبيه (تنبهني لما الكمية تنزل تحت هاد الرقم)">
                 <input type="number" style={inputStyle} value={form.alertThreshold} onChange={(e) => setForm({ ...form, alertThreshold: e.target.value })} />
               </Field>
-
-              {errorMsg && (
-                <div style={{ color: "var(--color-danger)", fontSize: 13, textAlign: "center" }}>
-                  {errorMsg}
-                </div>
-              )}
-
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="btn-whatsapp"
-                style={{ background: "var(--color-primary)", justifyContent: "center", marginTop: 8, opacity: saving ? 0.6 : 1 }}
-              >
+              {errorMsg && <div style={{ color: "var(--color-danger)", fontSize: 13, textAlign: "center" }}>{errorMsg}</div>}
+              <button onClick={handleSave} disabled={saving} className="btn-whatsapp" style={{ background: "var(--color-primary)", justifyContent: "center", marginTop: 8, opacity: saving ? 0.6 : 1 }}>
                 {saving ? "جاري الحفظ..." : "حفظ"}
               </button>
             </div>
@@ -237,35 +221,6 @@ function Field({ label, children }) {
   );
 }
 
-const inputStyle = {
-  width: "100%",
-  background: "var(--bg-pill)",
-  border: "1px solid var(--border-subtle)",
-  borderRadius: "var(--radius-sm)",
-  padding: "10px 12px",
-  color: "var(--text-primary)",
-  fontSize: 14,
-  outline: "none",
-};
-
-const iconBtnStyle = {
-  width: 30,
-  height: 30,
-  borderRadius: "50%",
-  border: "none",
-  background: "var(--bg-pill)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const overlayStyle = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.6)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 16,
-  zIndex: 50,
-};
+const inputStyle = { width: "100%", background: "var(--bg-pill)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", padding: "10px 12px", color: "var(--text-primary)", fontSize: 14, outline: "none" };
+const iconBtnStyle = { width: 30, height: 30, borderRadius: "50%", border: "none", background: "var(--bg-pill)", display: "flex", alignItems: "center", justifyContent: "center" };
+const overlayStyle = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 50 };
