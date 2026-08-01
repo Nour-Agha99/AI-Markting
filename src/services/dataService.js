@@ -78,7 +78,15 @@ export async function logoutUser(token) {
 export async function getProducts(token) {
   const data = await apiRequest(ENDPOINTS.getProducts, { token });
   const products = Array.isArray(data?.products) ? data.products : [];
-  return products;
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    unit: p.unit,
+    sellPrice: Number(p.sellPrice ?? p.sell_price),
+    buyPrice: Number(p.buyPrice ?? p.buy_price),
+    quantity: Number(p.quantity),
+    alertThreshold: Number(p.alertThreshold ?? p.alert_threshold),
+  }));
 }
 
 export async function addProduct(product, token) {

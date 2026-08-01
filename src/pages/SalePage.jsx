@@ -41,7 +41,7 @@ export default function SalePage({ token, mainProducts }) {
       return { productId, qty, product };
     });
 
-  const total = cartItems.reduce((sum, item) => sum + item.qty * (item.product?.sellPrice || 0), 0);
+const total = cartItems.reduce((sum, item) => sum + item.qty * (item.product?.sellPrice || 0), 0);
 
   function adjustQty(productId, delta, unit) {
     const product = products.find((p) => p.id === productId);
