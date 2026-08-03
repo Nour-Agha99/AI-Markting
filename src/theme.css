@@ -5,37 +5,51 @@
 
 :root {
   /* ---- الخلفيات Backgrounds ---- */
-  --bg-app: #0A0D12;          /* خلفية الصفحة الأساسية */
-  --bg-card: #161B22;         /* خلفية الكاردات */
-  --bg-card-alt: #1A1F2A;     /* خلفية الكاردات الثانوية / hover */
-  --bg-pill: #1F242E;         /* خلفية الأزرار الصغيرة (الكاش، بال بي...) */
-  --bg-tab: #11151C;          /* خلفية شريط التابات السفلي */
+  --bg-app: #0A0D12;
+  /* خلفية الصفحة الأساسية */
+  --bg-card: #161B22;
+  /* خلفية الكاردات */
+  --bg-card-alt: #1A1F2A;
+  /* خلفية الكاردات الثانوية / hover */
+  --bg-pill: #1F242E;
+  /* خلفية الأزرار الصغيرة (الكاش، بال بي...) */
+  --bg-tab: #11151C;
+  /* خلفية شريط التابات السفلي */
 
   /* ---- الحدود Borders ---- */
   --border-subtle: #232834;
   --border-active: #3B82F6;
 
   /* ---- الألوان الأساسية Brand Colors ---- */
-  --color-primary: #3B82F6;       /* أزرق: تاب مختار / مزامنة / الكل */
+  --color-primary: #3B82F6;
+  /* أزرق: تاب مختار / مزامنة / الكل */
   --color-primary-hover: #2563EB;
-  --color-primary-soft: rgba(59, 130, 246, 0.15); /* خلفية شفافة للأزرق */
+  --color-primary-soft: rgba(59, 130, 246, 0.15);
+  /* خلفية شفافة للأزرق */
 
-  --color-success: #22C55E;       /* أخضر: واتساب / مقبوضات */
+  --color-success: #22C55E;
+  /* أخضر: واتساب / مقبوضات */
   --color-success-hover: #16A34A;
   --color-success-soft: rgba(34, 197, 94, 0.15);
 
-  --color-danger: #EF4444;        /* أحمر: ديون / تحذيرات */
+  --color-danger: #EF4444;
+  /* أحمر: ديون / تحذيرات */
   --color-danger-hover: #DC2626;
   --color-danger-soft: rgba(239, 68, 68, 0.15);
 
-  --color-warning: #F59E0B;       /* أصفر/برتقالي: تنبيهات المخزون */
+  --color-warning: #F59E0B;
+  /* أصفر/برتقالي: تنبيهات المخزون */
   --color-warning-soft: rgba(245, 158, 11, 0.15);
 
   /* ---- النصوص Text ---- */
-  --text-primary: #FFFFFF;        /* عناوين / أرقام رئيسية */
-  --text-secondary: #9CA3AF;      /* نصوص ثانوية / تسميات */
-  --text-muted: #6B7280;          /* نصوص خافتة جداً */
-  --text-on-primary: #FFFFFF;     /* نص فوق الأزرق */
+  --text-primary: #FFFFFF;
+  /* عناوين / أرقام رئيسية */
+  --text-secondary: #9CA3AF;
+  /* نصوص ثانوية / تسميات */
+  --text-muted: #6B7280;
+  /* نصوص خافتة جداً */
+  --text-on-primary: #FFFFFF;
+  /* نص فوق الأزرق */
 
   /* ---- ظلال Shadows ---- */
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -101,9 +115,17 @@ body {
   font-weight: 700;
 }
 
-.stat-card.danger .stat-value { color: var(--color-danger); }
-.stat-card.success .stat-value { color: var(--color-success); }
-.stat-card.primary .stat-value { color: var(--text-primary); }
+.stat-card.danger .stat-value {
+  color: var(--color-danger);
+}
+
+.stat-card.success .stat-value {
+  color: var(--color-success);
+}
+
+.stat-card.primary .stat-value {
+  color: var(--text-primary);
+}
 
 /* --- أزرار Pills (كاش، بال بي، جوال بي...) --- */
 .pill {
@@ -176,19 +198,19 @@ body {
   display: flex;
   justify-content: space-around;
   padding: 10px 0;
-  border-radius:  999px;
+  border-radius: 999px;
   border: 1px solid #06215b;
 }
 
 .tab-item {
-     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-secondary);
-    font-size: 12px;
-    background: transparent;
-    border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  background: transparent;
+  border: none;
 }
 
 .tab-item.active {
@@ -249,7 +271,69 @@ body {
 .spin {
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- إشعارات --- */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, +16px);
+  }
+}
+
+.toast {
+  position: fixed;
+  bottom: 16px;
+  right: calc(50vw + -293px);
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 999;
+  max-width: 90%;
+  text-align: center;
+  box-shadow: var(--shadow-elevated);
+  animation: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast.toast-leaving {
+  animation: toast-out 0.3s ease forwards;
+}
+
+.toast-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.toast-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }

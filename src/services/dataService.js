@@ -77,6 +77,13 @@ export async function logoutUser(token) {
 
 export async function getProducts(token) {
   const data = await apiRequest(ENDPOINTS.getProducts, { token });
+
+  if (!data?.success) {
+    const error = new Error(data?.error || "ما قدرنا نجيب المنتجات، حاول مرة ثانية.");
+    error.code = data?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+
   const products = Array.isArray(data?.products) ? data.products : [];
   return products.map((p) => ({
     id: p.id,

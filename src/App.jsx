@@ -24,6 +24,21 @@ function App() {
   const [hydrated, setHydrated] = useState(false);
   const [mainProducts, setMainProducts] = useState([]);
   const [sessionNotice, setSessionNotice] = useState("");
+  const [productsError, setProductsError] = useState("");
+  const [productsErrorLeaving, setProductsErrorLeaving] = useState(false);
+
+  useEffect(() => {
+    if (!productsError) return;
+    setProductsErrorLeaving(false);
+
+    const leaveTimer = setTimeout(() => setProductsErrorLeaving(true), 4700);
+    const clearTimer = setTimeout(() => setProductsError(""), 5000);
+
+    return () => {
+      clearTimeout(leaveTimer);
+      clearTimeout(clearTimer);
+    };
+  }, [productsError]);
 
   useEffect(() => {
     async function restoreSession() {
@@ -42,8 +57,9 @@ function App() {
             } catch (err) {
               if (err?.code === "SESSION_EXPIRED") {
                 handleLogout();
+              } else {
+                setProductsError(err.message || "ما قدرنا نجيب المنتجات، حاول تحدّث الصفحة.");
               }
-
             }
           }
         }
@@ -60,11 +76,14 @@ function App() {
   const refreshProducts = useCallback(async () => {
     if (!authToken) return;
     try {
-      const products = await getProducts(token);
+      const products = await getProducts(authToken);
       setMainProducts(products);
+      setProductsError("");
     } catch (err) {
       if (err?.code === "SESSION_EXPIRED") {
         handleLogout();
+      } else {
+        setProductsError(err.message || "ما قدرنا نحدّث المنتجات، حاول مرة ثانية.");
       }
     }
   }, [authToken]);
@@ -76,23 +95,23 @@ function App() {
       setSessionNotice("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
       handleLogout();
     }
-    // بنرجع الخطأ نفسه عشان الصفحة يلي نادت تقدر تعرضه لو مش session error
     throw err;
   }
 
-  const handleLogin = async ({ username, password }) => {
-    const data = await loginUser({ username, password });
-    setMainProducts(data.products || []);
-    setAuthToken(data.token);
-    setUserRole(data.role);
-    setUsername(data.username);
-    setSessionNotice("");
-
-    sessionStorage.setItem(
-      SESSION_KEY,
-      JSON.stringify({ token: data.token, role: data.role, username: data.username })
-    );
-  };
+const handleLogin = async ({ username, password }) => {
+  const data = await loginUser({ username, password });
+  setMainProducts(data.products || []);
+  setAuthToken(data.token);
+  setUserRole(data.role);
+  setUsername(data.username);
+  setSessionNotice("");
+  setProductsError(data.productsWarning || "");
+  
+  sessionStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({ token: data.token, role: data.role, username: data.username })
+  );
+};
 
   const handleLogout = () => {
     if (authToken) logoutUser(authToken);
@@ -100,6 +119,7 @@ function App() {
     setUserRole(null);
     setUsername(null);
     setMainProducts([]);
+    setProductsError("");
     sessionStorage.removeItem(SESSION_KEY);
   };
 
@@ -109,7 +129,7 @@ function App() {
     return (
       <>
         {sessionNotice && (
-          <div style={{ position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)", background: "var(--color-warning-soft)", color: "var(--color-warning)", padding: "10px 18px", borderRadius: 10, fontSize: 13, zIndex: 999 }}>
+          <div className="toast toast-warning">
             {sessionNotice}
           </div>
         )}
@@ -120,6 +140,12 @@ function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-app)", display: "flex", flexDirection: "column", maxWidth: "860px", margin: "0 auto", marginBlock: "100px" }}>
+      {productsError && (
+        <div className={`toast toast-danger ${productsErrorLeaving ? "toast-leaving" : ""}`}>
+          {productsError}
+        </div>
+      )}
+
       <header style={{ padding: "16px 16px 12px", borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-app)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h1 style={{ fontSize: 18, fontWeight: 700 }}>{PAGE_TITLES[activeTab]}</h1>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
