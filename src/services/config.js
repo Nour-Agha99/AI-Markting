@@ -12,4 +12,5 @@ export const ENDPOINTS = {
   payDebt: `${N8N_BASE_URL}/payDebt`,
   putDebt: `${N8N_BASE_URL}/putDebt`,
   getHistory: `${N8N_BASE_URL}/getHistory`,
+  heartbeat: `${N8N_BASE_URL}/heartbeat`,
 };

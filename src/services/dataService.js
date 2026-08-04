@@ -157,3 +157,9 @@ export async function getHistory(token) {
   const data = await apiRequest(ENDPOINTS.getHistory, { token });
   return Array.isArray(data) ? data : [];
 }
+
+// ---------- نبضة الجلسة ----------
+
+export async function sendHeartbeat(token) {
+  return apiRequest(ENDPOINTS.heartbeat, { method: "POST", token });
+}

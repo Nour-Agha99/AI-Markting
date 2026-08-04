@@ -5,7 +5,7 @@ import SalePage from "./pages/SalePage";
 import ProductsPage from "./pages/ProductsPage";
 import DebtsPage from "./pages/DebtsPage";
 import HistoryPage from "./pages/HistoryPage";
-import { loginUser, logoutUser, getProducts } from "./services/dataService";
+import { loginUser, logoutUser, getProducts, sendHeartbeat } from "./services/dataService";
 
 const PAGE_TITLES = {
   sale: "تسجيل بيع",
@@ -26,6 +26,7 @@ function App() {
   const [sessionNotice, setSessionNotice] = useState("");
   const [productsError, setProductsError] = useState("");
   const [productsErrorLeaving, setProductsErrorLeaving] = useState(false);
+  const [sessionNoticeLeaving, setSessionNoticeLeaving] = useState(false);
 
   useEffect(() => {
     if (!productsError) return;
@@ -39,6 +40,19 @@ function App() {
       clearTimeout(clearTimer);
     };
   }, [productsError]);
+
+  useEffect(() => {
+    if (!sessionNotice) return;
+    setSessionNoticeLeaving(false);
+
+    const leaveTimer = setTimeout(() => setSessionNoticeLeaving(true), 4700);
+    const clearTimer = setTimeout(() => setSessionNotice(""), 5000);
+
+    return () => {
+      clearTimeout(leaveTimer);
+      clearTimeout(clearTimer);
+    };
+  }, [sessionNotice]);
 
   useEffect(() => {
     async function restoreSession() {
@@ -98,20 +112,20 @@ function App() {
     throw err;
   }
 
-const handleLogin = async ({ username, password }) => {
-  const data = await loginUser({ username, password });
-  setMainProducts(data.products || []);
-  setAuthToken(data.token);
-  setUserRole(data.role);
-  setUsername(data.username);
-  setSessionNotice("");
-  setProductsError(data.productsWarning || "");
-  
-  sessionStorage.setItem(
-    SESSION_KEY,
-    JSON.stringify({ token: data.token, role: data.role, username: data.username })
-  );
-};
+  const handleLogin = async ({ username, password }) => {
+    const data = await loginUser({ username, password });
+    setMainProducts(data.products || []);
+    setAuthToken(data.token);
+    setUserRole(data.role);
+    setUsername(data.username);
+    setSessionNotice("");
+    setProductsError(data.productsWarning || "");
+
+    sessionStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({ token: data.token, role: data.role, username: data.username })
+    );
+  };
 
   const handleLogout = () => {
     if (authToken) logoutUser(authToken);
@@ -123,13 +137,31 @@ const handleLogin = async ({ username, password }) => {
     sessionStorage.removeItem(SESSION_KEY);
   };
 
+
+  useEffect(() => {
+    if (!authToken) return;
+
+    // نبضة الجلسة كل دقيقتين، وإذا انتهت صلاحية الجلسة نعمل logout
+    const interval = setInterval(() => {
+      sendHeartbeat(authToken).catch((err) => {
+        if (err?.code === "SESSION_EXPIRED") {
+          setSessionNotice("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
+          handleLogout();
+        }
+      });
+    }, 2 * 60 * 1000); // كل دقيقتين
+
+    return () => clearInterval(interval);
+  }, [authToken]);
+
   if (!hydrated) return null;
 
   if (!authToken) {
     return (
       <>
+
         {sessionNotice && (
-          <div className="toast toast-warning">
+          <div className={`toast toast-warning ${sessionNoticeLeaving ? "toast-leaving" : ""}`}>
             {sessionNotice}
           </div>
         )}
