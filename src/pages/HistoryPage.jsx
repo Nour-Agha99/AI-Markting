@@ -10,10 +10,10 @@ const DATE_FILTERS = [
 ];
 
 const PAYMENT_LABELS = {
-  cash: "كاش",
-  bank_palestine: "بنك فلسطين",
-  paly: "بال بي",
-  jawwal: "جوال بي",
+  CASH: "كاش",
+  BANK_PALESTINE: "بنك فلسطين",
+  PALPAY: "بال بي",
+  JAWWALPAY: "جوال بي",
 };
 
 const TYPE_META = {

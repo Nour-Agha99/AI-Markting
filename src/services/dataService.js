@@ -85,6 +85,8 @@ export async function getProducts(token) {
   }
 
   const products = Array.isArray(data?.products) ? data.products : [];
+  console.log(products,'p');
+  
   return products.map((p) => ({
     id: p.id,
     name: p.name,
@@ -97,7 +99,7 @@ export async function getProducts(token) {
 }
 
 export async function addProduct(product, token) {
-  const newProduct = { ...product, id: `p${Date.now()}` };
+  const newProduct = { ...product };
   const response = await apiRequest(ENDPOINTS.addProduct, {
     method: "PUT",
     token,

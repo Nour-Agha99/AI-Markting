@@ -3,10 +3,10 @@ import { Banknote, CreditCard, Smartphone, Wallet, Check, Minus, Plus, X, Chevro
 import { getProducts, recordSale } from "../services/dataService";
 
 const PAYMENT_METHODS = [
-  { id: "cash", label: "كاش", icon: Banknote },
-  { id: "bank_palestine", label: "بنك فلسطين", icon: CreditCard },
-  { id: "paly", label: "بال بي", icon: Wallet },
-  { id: "jawwal", label: "جوال بي", icon: Smartphone },
+  { id: "CASH", label: "كاش", icon: Banknote },
+  { id: "BANK_PALESTINE", label: "بنك فلسطين", icon: CreditCard },
+  { id: "PALPAY", label: "بال بي", icon: Wallet },
+  { id: "JAWWALPAY", label: "جوال بي", icon: Smartphone },
 ];
 
 const PAYMENT_TIMING = [
@@ -21,7 +21,7 @@ export default function SalePage({ token, mainProducts }) {
   const [customerName, setCustomerName] = useState("");
   const [paymentTiming, setPaymentTiming] = useState("now");
   const [timingMenuOpen, setTimingMenuOpen] = useState(false);
-  const [payment, setPayment] = useState("cash");
+  const [payment, setPayment] = useState("CASH");
   const [notes, setNotes] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");

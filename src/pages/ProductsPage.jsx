@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, X, AlertTriangle } from "lucide-react";
 import { addProduct, updateProduct, deleteProduct } from "../services/dataService";
+import { canManageProducts } from "../utils/roles";
 
 const emptyForm = { name: "", buyPrice: "", sellPrice: "", quantity: "", unit: "piece", alertThreshold: "" };
 
 export default function ProductsPage({ token, role, mainProducts, refreshProducts, onApiError }) {
-  const isAdmin = role === "admin";
+  const isAdmin = canManageProducts(role); // admin أو owner
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);

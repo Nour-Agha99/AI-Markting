@@ -1,4 +1,5 @@
 import { ShoppingBag, Package, Clock, AlertTriangle } from "lucide-react";
+import { getVisibleTabIds } from "../utils/roles";
 
 const TABS = [
   { id: "sale", label: "بيع", icon: ShoppingBag },
@@ -7,10 +8,13 @@ const TABS = [
   { id: "debts", label: "الديون", icon: AlertTriangle },
 ];
 
-export default function TabBar({ activeTab, onChange }) {
+export default function TabBar({ activeTab, onChange, role }) {
+  const visibleIds = getVisibleTabIds(role);
+  const visibleTabs = TABS.filter((tab) => visibleIds.includes(tab.id));
+
   return (
     <nav className="tab-bar">
-      {TABS.map((tab) => {
+      {visibleTabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
         return (
