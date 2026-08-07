@@ -41,7 +41,7 @@ export default function SalePage({ token, mainProducts }) {
       return { productId, qty, product };
     });
 
-const total = cartItems.reduce((sum, item) => sum + item.qty * (item.product?.sellPrice || 0), 0);
+  const total = cartItems.reduce((sum, item) => sum + item.qty * (item.product?.sellPrice || 0), 0);
 
   function adjustQty(productId, delta, unit) {
     const product = products.find((p) => p.id === productId);
@@ -102,6 +102,7 @@ const total = cartItems.reduce((sum, item) => sum + item.qty * (item.product?.se
       setTimeout(() => setSuccessMsg(""), 2500);
     } catch (err) {
       setErrorMsg(err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
+      setTimeout(() => setErrorMsg(""), 3000);
     } finally {
       setConfirming(false);
     }

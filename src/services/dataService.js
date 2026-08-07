@@ -32,20 +32,34 @@ async function apiRequest(url, { method = "GET", token, body } = {}) {
     throw networkError(err);
   }
 
-  if (res.status === 401 || res.status === 403) {
-    throw sessionExpiredError();
-  }
-  if (!res.ok) {
-    throw new Error(`فشل الاتصال بالسيرفر (${res.status})`);
+  const text = await res.text();
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
   }
 
-  const text = await res.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
+  // جلسة منتهية أو حساب معطّل بس - مش أي 401/403 بشكل عام
+  // (مثلاً INSUFFICIENT_ROLE هو 403 بس مش معناها انتهت الجلسة)
+  const authCode = data && typeof data === "object" ? data.code : null;
+  if (authCode === "INVALID_TOKEN" || authCode === "ACCOUNT_DISABLED") {
+    throw sessionExpiredError();
   }
+
+  if (!res.ok) {
+    const message =
+      (data && typeof data === "object" && data.error) ||
+      `فشل الاتصال بالسيرفر (${res.status})`;
+    const error = new Error(message);
+    error.code = (data && typeof data === "object" && data.code) || "UNKNOWN_ERROR";
+    error.statusCode = res.status;
+    throw error;
+  }
+
+  return data;
 }
 
 // ---------- تسجيل الدخول / الخروج ----------
@@ -85,8 +99,7 @@ export async function getProducts(token) {
   }
 
   const products = Array.isArray(data?.products) ? data.products : [];
-  console.log(products,'p');
-  
+
   return products.map((p) => ({
     id: p.id,
     name: p.name,
@@ -118,23 +131,33 @@ export async function updateProduct(id, changes, token) {
 }
 
 export async function deleteProduct(id, token) {
-  await apiRequest(ENDPOINTS.deleteProduct, {
+  const response = await apiRequest(ENDPOINTS.deleteProduct, {
     method: "DELETE",
     token,
     body: { id },
   });
+  if (!response?.success) {
+    const error = new Error(response?.error || "بيانات الدخول غير صحيحة");
+    error.code = response?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
   return true;
 }
 
 // ---------- المبيعات ----------
 
 export async function recordSale(sale, token) {
-  const newSale = { ...sale, id: `s${Date.now()}`, date: new Date().toISOString() };
+  const newSale = { ...sale };
   const response = await apiRequest(ENDPOINTS.recordSale, {
     method: "POST",
     token,
     body: newSale,
   });
+  if (!response?.success) {
+    const error = new Error(response?.error || "بيانات الدخول غير صحيحة");
+    error.code = response?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
   return { ...newSale, serverResponse: response };
 }
 
@@ -151,6 +174,7 @@ export async function recordPayment(debtId, amount, token) {
     token,
     body: { id: debtId, amount },
   });
+
 }
 
 // ---------- السجل ----------
