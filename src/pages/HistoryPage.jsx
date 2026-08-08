@@ -65,10 +65,10 @@ function dayKey(dateStr) {
 
 function itemsSummary(items, maxItems = 3) {
   if (!items || items.length === 0) return "";
-  
+
   const shown = items.slice(0, maxItems);
   const summary = shown.map((it) => `${it.name} ${it.qty}${it.unit === "kg" ? "كغ" : ""}`).join(" · ");
-  
+
   const remaining = items.length - maxItems;
   return remaining > 0 ? `${summary} +${remaining} منتجات أخرى` : summary;
 }
@@ -92,8 +92,8 @@ export default function HistoryPage({ token }) {
   }, [token]);
 
   useEffect(() => {
-  setVisibleCount(30);
-}, [dateFilter, debouncedSearch]);
+    setVisibleCount(30);
+  }, [dateFilter, debouncedSearch]);
 
   function refresh() {
     setLoading(true);
@@ -122,21 +122,23 @@ export default function HistoryPage({ token }) {
     }
     return Array.from(map.values());
   }, [filtered, visibleCount]);
-  
+
   return (
-    <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16, maxWidth: 714, margin: "auto" }}>
+    <div className="page-container">
       <div className="section-header">
         <span className="section-title">السجل</span>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span className="section-count">{filtered.length > visibleCount && (
-            <button
-              onClick={() => setVisibleCount((v) => v + 30)}
-              className="pill"
-              style={{ justifyContent: "center", width: "100%" }}
-            >
-              عرض المزيد ({filtered.length - visibleCount} متبقي)
-            </button>
-          )}</span>
+          <span className="section-count">
+            {filtered.length > visibleCount && (
+              <button
+                onClick={() => setVisibleCount((v) => v + 30)}
+                className="pill"
+                style={{ justifyContent: "center", width: "100%" }}
+              >
+                عرض المزيد ({filtered.length - visibleCount} متبقي)
+              </button>
+            )}
+          </span>
           <button onClick={refresh} disabled={loading} style={{ ...iconBtnStyle, opacity: loading ? 0.5 : 1 }}>
             <RefreshCw size={16} className={loading ? "spin" : ""} />
           </button>
@@ -146,7 +148,6 @@ export default function HistoryPage({ token }) {
       {errorMsg && (
         <div className="card" style={{ background: "var(--color-danger-soft)", color: "var(--color-danger)", textAlign: "center", fontWeight: 600 }}>
           {errorMsg}
-
         </div>
       )}
 
@@ -194,43 +195,32 @@ export default function HistoryPage({ token }) {
               {group.label}
             </div>
 
-            {group.items.map((r, idx) => {
+            {group.items.map((r) => {
               const meta = TYPE_META[r.type] || TYPE_META.sale;
               const summary = itemsSummary(r.items);
               return (
-                <div
-                  key={r.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: 10,
-                    padding: "14px 16px",
-                    borderBottom: idx === group.items.length - 1 ? "none" : "1px solid var(--border-subtle)",
-                  }}
-                >
-                  <span
-                    style={{
-                      background: meta.soft, color: meta.color, fontSize: 11, fontWeight: 700,
-                      padding: "3px 10px", borderRadius: "var(--radius-pill)", whiteSpace: "nowrap", marginTop: 2,
-                    }}
-                  >
+                <div key={r.id} className="history-row">
+                  <span className="history-badge" style={{ background: meta.soft, color: meta.color }}>
                     {meta.label}
                   </span>
 
-                  <div style={{ flex: 1, textAlign: "right" }}>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>
-                      {r.customerName || "بدون اسم"}
-                      <span style={{ color: meta.color }}> — ₪{Number(r.amount).toFixed(2)}</span>
+                  <div className="history-content">
+                    <div className="history-main">
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>
+                        {r.customerName || "بدون اسم"}
+                        <span style={{ color: meta.color }}> — ₪{Number(r.amount).toFixed(2)}</span>
+                      </div>
+                      {summary && (
+                        <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 2 }}>{summary}</div>
+                      )}
+                      {r.notes && (
+                        <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>{r.notes}</div>
+                      )}
                     </div>
-                    <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 2 }}>
+                    <div className="history-time">
                       {new Date(r.date).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}
-                      {summary && ` · ${summary}`}
                       {r.paymentMethod && ` · ${PAYMENT_LABELS[r.paymentMethod] || r.paymentMethod}`}
                     </div>
-                    {r.notes && (
-                      <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>{r.notes}</div>
-                    )}
                   </div>
                 </div>
               );

@@ -6,14 +6,14 @@ import { canManageProducts } from "../utils/roles";
 const emptyForm = { name: "", buyPrice: "", sellPrice: "", quantity: "", unit: "piece", alertThreshold: "" };
 
 export default function ProductsPage({ token, role, mainProducts, refreshProducts, onApiError }) {
-  const isAdmin = canManageProducts(role); // admin أو owner
+  const isAdmin = canManageProducts(role);
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null); // ← جديد
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
@@ -96,10 +96,19 @@ export default function ProductsPage({ token, role, mainProducts, refreshProduct
   }
 
   return (
-    <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16, maxWidth: 714, margin: "auto" }}>
-      <div className="section-header">
-        <span className="section-title">إجمالي المنتجات</span>
-        <span className="section-count">{products.length}</span>
+    <div className="page-container">
+      <div className="products-toolbar">
+        <div className="section-header">
+          <span className="section-title">إجمالي المنتجات</span>
+          <span className="section-count">{products.length}</span>
+        </div>
+
+        {isAdmin && (
+          <button onClick={openAddForm} className="btn-whatsapp add-product-btn" style={{ background: "var(--color-primary)" }}>
+            <Plus size={18} />
+            إضافة منتج جديد
+          </button>
+        )}
       </div>
 
       {errorMsg && !showForm && (
@@ -108,64 +117,60 @@ export default function ProductsPage({ token, role, mainProducts, refreshProduct
         </div>
       )}
 
-      {isAdmin && (
-        <button onClick={openAddForm} className="btn-whatsapp" style={{ background: "var(--color-primary)", justifyContent: "center" }}>
-          <Plus size={18} />
-          إضافة منتج جديد
-        </button>
-      )}
-
-      <div className="card" style={{ padding: 0 }}>
+      <div className="card products-panel">
         {products.length === 0 && (
           <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)" }}>
             ما في منتجات بعد.
           </div>
         )}
-        {products.map((p, idx) => {
-          const low = p.quantity <= p.alertThreshold;
-          const confirming = confirmDeleteId === p.id;
-          return (
-            <div key={p.id} className="product-row" style={{ padding: "14px 16px", borderBottom: idx === products.length - 1 ? "none" : undefined }}>
-              {isAdmin ? (
-                confirming ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <button
-                      onClick={() => handleDelete(p.id)}
-                      disabled={deletingId === p.id}
-                      className="pill"
-                      style={{ background: "var(--color-danger)", color: "white", fontSize: 12, padding: "6px 12px" }}
-                    >
-                      {deletingId === p.id ? "..." : "تأكيد الحذف"}
-                    </button>
-                    <button onClick={() => setConfirmDeleteId(null)} style={iconBtnStyle}>
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <button onClick={() => setConfirmDeleteId(p.id)} style={iconBtnStyle}>
-                      <Trash2 size={15} color="var(--color-danger)" />
-                    </button>
-                    <button onClick={() => openEditForm(p)} style={iconBtnStyle}>
-                      <Edit2 size={15} color="var(--text-secondary)" />
-                    </button>
-                  </div>
-                )
-              ) : ''}
+        <div className="products-list">
+          {products.map((p) => {
+            const low = p.quantity <= p.alertThreshold;
+            const confirming = confirmDeleteId === p.id;
+            return (
+              <div key={p.id} className="product-row">
+                {isAdmin ? (
+                  confirming ? (
+                    <div className="product-actions" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <button
+                        onClick={() => handleDelete(p.id)}
+                        disabled={deletingId === p.id}
+                        className="pill"
+                        style={{ background: "var(--color-danger)", color: "white", fontSize: 12, padding: "6px 12px" }}
+                      >
+                        {deletingId === p.id ? "..." : "تأكيد الحذف"}
+                      </button>
+                      <button onClick={() => setConfirmDeleteId(null)} style={iconBtnStyle}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="product-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <button onClick={() => setConfirmDeleteId(p.id)} style={iconBtnStyle}>
+                        <Trash2 size={15} color="var(--color-danger)" />
+                      </button>
+                      <button onClick={() => openEditForm(p)} style={iconBtnStyle}>
+                        <Edit2 size={15} color="var(--text-secondary)" />
+                      </button>
+                    </div>
+                  )
+                ) : null}
 
-              <div style={{ textAlign: "left" }}>
-                <div className="product-price">₪{p.sellPrice}</div>
-                <div className="product-meta" style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
-                  {low && <AlertTriangle size={12} color="var(--color-danger)" />}
-                  <span style={{ color: low ? "var(--color-danger)" : "var(--text-secondary)" }}>
-                    {p.quantity} {p.unit === "kg" ? "كغ" : "قطعة"}
-                  </span>
+                <div className="product-price-block">
+                  <div className="product-price">₪{p.sellPrice}</div>
+                  <div className="product-meta" style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
+                    {low && <AlertTriangle size={12} color="var(--color-danger)" />}
+                    <span style={{ color: low ? "var(--color-danger)" : "var(--text-secondary)" }}>
+                      {p.quantity} {p.unit === "kg" ? "كغ" : "قطعة"}
+                    </span>
+                  </div>
                 </div>
+
+                <div className="product-name">{p.name}</div>
               </div>
-              <div className="product-name" style={{ textAlign: "right" }}>{p.name}</div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {showForm && isAdmin && (

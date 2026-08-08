@@ -6,15 +6,10 @@
 :root {
   /* ---- الخلفيات Backgrounds ---- */
   --bg-app: #0A0D12;
-  /* خلفية الصفحة الأساسية */
   --bg-card: #161B22;
-  /* خلفية الكاردات */
   --bg-card-alt: #1A1F2A;
-  /* خلفية الكاردات الثانوية / hover */
   --bg-pill: #1F242E;
-  /* خلفية الأزرار الصغيرة (الكاش، بال بي...) */
   --bg-tab: #11151C;
-  /* خلفية شريط التابات السفلي */
 
   /* ---- الحدود Borders ---- */
   --border-subtle: #232834;
@@ -22,34 +17,25 @@
 
   /* ---- الألوان الأساسية Brand Colors ---- */
   --color-primary: #3B82F6;
-  /* أزرق: تاب مختار / مزامنة / الكل */
   --color-primary-hover: #2563EB;
   --color-primary-soft: rgba(59, 130, 246, 0.15);
-  /* خلفية شفافة للأزرق */
 
   --color-success: #22C55E;
-  /* أخضر: واتساب / مقبوضات */
   --color-success-hover: #16A34A;
   --color-success-soft: rgba(34, 197, 94, 0.15);
 
   --color-danger: #EF4444;
-  /* أحمر: ديون / تحذيرات */
   --color-danger-hover: #DC2626;
   --color-danger-soft: rgba(239, 68, 68, 0.15);
 
   --color-warning: #F59E0B;
-  /* أصفر/برتقالي: تنبيهات المخزون */
   --color-warning-soft: rgba(245, 158, 11, 0.15);
 
   /* ---- النصوص Text ---- */
   --text-primary: #FFFFFF;
-  /* عناوين / أرقام رئيسية */
   --text-secondary: #9CA3AF;
-  /* نصوص ثانوية / تسميات */
   --text-muted: #6B7280;
-  /* نصوص خافتة جداً */
   --text-on-primary: #FFFFFF;
-  /* نص فوق الأزرق */
 
   /* ---- ظلال Shadows ---- */
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -73,6 +59,33 @@
 }
 
 /* ============================================
+   Light Theme — يفعّل عبر [data-theme="light"] على <html>
+   ============================================ */
+:root[data-theme="light"] {
+  --bg-app: #F5F6FA;
+  --bg-card: #FFFFFF;
+  --bg-card-alt: #F1F3F7;
+  --bg-pill: #EDEFF4;
+  --bg-tab: #FFFFFF;
+
+  --border-subtle: #E3E6EC;
+  --border-active: #3B82F6;
+
+  --text-primary: #0F172A;
+  --text-secondary: #5B6472;
+  --text-muted: #99A2B2;
+  --text-on-primary: #FFFFFF;
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --shadow-elevated: 0 8px 24px rgba(16, 24, 40, 0.12);
+}
+
+/* انتقال ناعم بين الثيمين */
+body, .card, .stat-card, .pill, .tab-bar, .top-nav, input, select, textarea {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* ============================================
    إعدادات أساسية عامة
    ============================================ */
 
@@ -83,11 +96,28 @@ body {
   direction: rtl;
 }
 
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: var(--radius-pill);
+}
+
 /* ============================================
    مكونات جاهزة (Utility Classes)
    ============================================ */
 
-/* --- كارد عام --- */
 .card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -96,7 +126,6 @@ body {
   box-shadow: var(--shadow-card);
 }
 
-/* --- كارد الإحصائيات (ديون كلية / مقبوضات / إجمالي المبيعات) --- */
 .stat-card {
   background-color: var(--bg-card);
   border-radius: var(--radius-md);
@@ -115,19 +144,10 @@ body {
   font-weight: 700;
 }
 
-.stat-card.danger .stat-value {
-  color: var(--color-danger);
-}
+.stat-card.danger .stat-value { color: var(--color-danger); }
+.stat-card.success .stat-value { color: var(--color-success); }
+.stat-card.primary .stat-value { color: var(--text-primary); }
 
-.stat-card.success .stat-value {
-  color: var(--color-success);
-}
-
-.stat-card.primary .stat-value {
-  color: var(--text-primary);
-}
-
-/* --- أزرار Pills (كاش، بال بي، جوال بي...) --- */
 .pill {
   background-color: var(--bg-pill);
   border-radius: var(--radius-pill);
@@ -140,13 +160,11 @@ body {
   border: 1px solid var(--border-subtle);
 }
 
-
 .filter-btn.active {
   background-color: var(--color-primary);
   color: var(--text-on-primary);
 }
 
-/* --- زر واتساب --- */
 .btn-whatsapp {
   background-color: var(--color-success);
   color: var(--text-on-primary);
@@ -163,7 +181,6 @@ body {
   background-color: var(--color-success-hover);
 }
 
-/* --- زر مزامنة / حالة معلقة --- */
 .sync-banner {
   background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -191,7 +208,6 @@ body {
   display: inline-block;
 }
 
-/* --- التابات السفلية (بيع، منتجات، السجل، الديون، ملخص) --- */
 .tab-bar {
   background-color: var(--bg-tab);
   border-top: 1px solid var(--border-subtle);
@@ -222,7 +238,6 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* --- صف منتج في القائمة --- */
 .product-row {
   display: flex;
   justify-content: space-between;
@@ -249,7 +264,6 @@ body {
   font-weight: 600;
 }
 
-/* --- شريط عنوان قسم (مثل "ملخص الكل" أو "إجمالي المنتجات") --- */
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -267,44 +281,23 @@ body {
   font-weight: 600;
 }
 
-/* -------------- */
 .spin {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* --- إشعارات --- */
 @keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -16px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
+  from { opacity: 0; transform: translate(-50%, -16px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
 }
 
 @keyframes toast-out {
-  from {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-
-  to {
-    opacity: 0;
-    transform: translate(-50%, +16px);
-  }
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, +16px); }
 }
 
 .toast {
@@ -336,4 +329,319 @@ body {
   background: var(--color-warning);
   color: var(--color-on-primary);
   border: 1px solid rgba(245, 159, 11, 0.667);
+}
+
+/* ============================================
+   Responsive — Mobile nav (كما هو، بس بقالب class)
+   ============================================ */
+
+.mobile-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-app);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 100px;
+}
+
+.mobile-nav-wrapper {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 660px;
+  z-index: 200;
+}
+
+@media (min-width: 968px) {
+  .mobile-header,
+  .mobile-nav-wrapper {
+    display: none;
+  }
+}
+
+/* ============================================
+   Top Nav — الديسكتوب بس
+   ============================================ */
+
+.top-nav {
+  display: none;
+}
+
+@media (min-width: 968px) {
+  .top-nav {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+.top-nav-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.top-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.top-nav-logo {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.top-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-pill);
+  padding: 5px;
+  border-radius: var(--radius-pill);
+}
+
+.top-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: var(--radius-pill);
+}
+
+.top-nav-link.active {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+}
+
+.top-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.theme-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-pill);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-nav-user {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.top-nav-logout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+  white-space: nowrap;
+}
+
+/* ============================================
+   App shell width — يتوسّع بالديسكتوب
+   ============================================ */
+
+.app-shell {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+@media (min-width: 968px) {
+  .app-shell {
+    max-width: 1400px;
+  }
+}
+
+/* ============================================
+   SalePage — تخطيط الديسكتوب
+   ============================================ */
+
+.sale-page {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 968px) {
+  .sale-page {
+    padding: 28px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+}
+
+.sale-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 968px) {
+  .sale-layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    align-items: start;
+    gap: 24px;
+  }
+}
+
+.sale-cart-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 968px) {
+  .sale-cart-column {
+    position: sticky;
+    top: 96px;
+  }
+}
+
+.product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 968px) {
+  .product-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+/* لمسة الفاتورة — خط متقطّع فوق كارد السلة، متل حافة الإيصال */
+.receipt-card {
+  position: relative;
+}
+
+.receipt-card::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  left: 16px;
+  border-top: 2px dashed var(--border-subtle);
+}
+
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 14px;
+  border-top: 2px dashed var(--border-subtle);
+  padding-top: 12px;
+}
+/* ============================================
+   LoginPage — تقسيم الشاشة بالديسكتوب
+   ============================================ */
+.login-page {
+  min-height: 100vh;
+  background: var(--bg-app);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+@media (min-width: 968px) {
+  .login-page {
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.login-form-side {
+  width: 100%;
+  max-width: 420px;
+}
+
+@media (min-width: 968px) {
+  .login-form-side {
+    max-width: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  .login-form-side > div {
+    width: 100%;
+    max-width: 420px;
+  }
+}
+
+.login-brand-side {
+  display: none;
+}
+
+@media (min-width: 968px) {
+  .product-row {
+    flex-direction: column;
+    align-items: stretch;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-card);
+    padding: 16px;
+    direction: rtl;
+  }
+  .product-row .product-name {
+    order: 1;
+    width: auto;
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+  .product-row .product-price-block {
+    order: 2;
+    text-align: right;
+  }
+  .product-row .product-price-block .product-meta {
+    justify-content: flex-start !important;
+  }
+  .product-row .product-actions {
+    order: 3;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
 }

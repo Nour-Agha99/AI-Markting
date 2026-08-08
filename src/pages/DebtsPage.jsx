@@ -9,8 +9,8 @@ export default function DebtsPage({ token, role, onApiError }) {
   const [payAmount, setPayAmount] = useState("");
   const [payingLoading, setPayingLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [confirmFullId, setConfirmFullId] = useState(null); 
-  
+  const [confirmFullId, setConfirmFullId] = useState(null);
+
   useEffect(() => {
     refresh();
   }, [token]);
@@ -35,7 +35,7 @@ export default function DebtsPage({ token, role, onApiError }) {
     const amount = full ? remaining : parseFloat(payAmount);
 
     if (!amount || amount <= 0) return;
-    if (amount > remaining) { 
+    if (amount > remaining) {
       setErrorMsg("المبلغ المدخل أكبر من المتبقي على الزبون.");
       return;
     }
@@ -67,34 +67,34 @@ export default function DebtsPage({ token, role, onApiError }) {
   const totalDebt = debtsWithStatus.reduce((sum, d) => sum + Math.max(d.remaining, 0), 0);
 
   return (
-    <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16, maxWidth: 714, margin: "auto" }}>
+    <div className="page-container">
       {errorMsg && (
         <div className="card" style={{ background: "var(--color-danger-soft)", color: "var(--color-danger)", textAlign: "center", fontWeight: 600 }}>
           {errorMsg}
         </div>
       )}
 
-      <div className="stat-card danger" style={{ textAlign: "center" }}>
+      <div className="stat-card danger stat-card-highlight" style={{ textAlign: "center" }}>
         <div className="stat-label">إجمالي الديون المستحقة</div>
         <div className="stat-value">₪{totalDebt.toFixed(2)}</div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="debts-list">
         {loading && <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>جاري التحميل...</div>}
         {!loading && debtsWithStatus.length === 0 && (
           <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>ما في ديون مسجلة.</div>
         )}
         {debtsWithStatus.map((d) => (
-          <div key={d.id} className="card">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
+          <div key={d.id} className="debt-row">
+            <div className="debt-row-top">
+              <div className="debt-name-block">
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{d.customerName}</div>
                 <div style={{ color: "var(--text-secondary)", fontSize: 12, display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
                   <Clock size={12} />
                   {new Date(d.date).toLocaleDateString("ar-EG")}
                 </div>
               </div>
-              <div style={{ textAlign: "left" }}>
+              <div className="debt-amount-block" style={{ textAlign: "left" }}>
                 <div style={{ fontWeight: 700, color: d.isPaid ? "var(--color-success)" : "var(--color-danger)" }}>
                   ₪{Math.max(d.remaining, 0).toFixed(2)}
                 </div>
@@ -112,7 +112,7 @@ export default function DebtsPage({ token, role, onApiError }) {
                 تم السداد بالكامل
               </div>
             ) : payingId === d.id ? (
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
                 <input
                   type="number"
                   placeholder="المبلغ"
@@ -120,7 +120,7 @@ export default function DebtsPage({ token, role, onApiError }) {
                   max={d.remaining}
                   onChange={(e) => setPayAmount(e.target.value)}
                   disabled={payingLoading}
-                  style={{ ...inputStyle, flex: 1 }}
+                  style={{ ...inputStyle, flex: 1, minWidth: 100 }}
                 />
                 <button onClick={() => handlePay(d, false)} disabled={payingLoading} className="pill" style={{ background: "var(--color-primary)", opacity: payingLoading ? 0.6 : 1 }}>
                   {payingLoading ? "جاري السداد..." : "سداد"}

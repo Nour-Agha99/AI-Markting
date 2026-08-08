@@ -17,7 +17,7 @@ const PAYMENT_TIMING = [
 export default function SalePage({ token, mainProducts }) {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({});
-  const [cartMode, setCartMode] = useState({}); // { productId: 'kg' | 'shekel' }
+  const [cartMode, setCartMode] = useState({});
   const [customerName, setCustomerName] = useState("");
   const [paymentTiming, setPaymentTiming] = useState("now");
   const [timingMenuOpen, setTimingMenuOpen] = useState(false);
@@ -78,7 +78,7 @@ export default function SalePage({ token, mainProducts }) {
     setNameError(false);
     setConfirming(true);
     try {
-
+      
       await recordSale({
         customerName: customerName.trim() || null,
         isDebt,
@@ -109,7 +109,7 @@ export default function SalePage({ token, mainProducts }) {
   }
 
   return (
-    <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16, width: "fit-content", minWidth: "100%" }}>
+    <div className="sale-page">
       {successMsg && (
         <div className="card" style={{ background: "var(--color-success-soft)", color: "var(--color-success)", textAlign: "center", fontWeight: 600 }}>
           {successMsg}
@@ -121,8 +121,9 @@ export default function SalePage({ token, mainProducts }) {
           {errorMsg}
         </div>
       )}
-      <div style={{ display: "flex", flexDirection: "row", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 390 }}>
+
+      <div className="sale-layout">
+        <div className="sale-cart-column">
           {/* اسم الزبون + توقيت الدفع */}
           <div className="card" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
@@ -195,15 +196,17 @@ export default function SalePage({ token, mainProducts }) {
               هاي العملية رح تتسجل كدين على اسم الزبون وتظهر بصفحة الديون
             </div>
           )}
+
           {/* ملاحظات */}
           <div className="card">
             <label style={{ color: "var(--text-secondary)", fontSize: 13, display: "block", marginBottom: 8 }}>ملاحظات (اختياري)</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="أي ملاحظة على هاي العملية..." rows={2} style={{ ...inputStyle, resize: "none" }} />
           </div>
+
           {/* السلة + التأكيد */}
           {cartItems.length > 0 && (
-            <div className="card" style={{ position: "sticky", bottom: 8 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+            <div className="card receipt-card" style={{ position: "sticky", bottom: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12, marginTop: 8 }}>
                 {cartItems.map((item) => (
                   <div key={item.productId} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
                     <button onClick={() => setCart(prev => { const n = { ...prev }; delete n[item.productId]; return n })}
@@ -215,7 +218,8 @@ export default function SalePage({ token, mainProducts }) {
                   </div>
                 ))}
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 18, marginBottom: 14, borderTop: "1px solid var(--border-subtle)", paddingTop: 10 }}>
+
+              <div className="receipt-total-row">
                 <span>الإجمالي</span>
                 <span style={{ color: "var(--color-primary)" }}>₪{total.toFixed(2)}</span>
               </div>
@@ -230,12 +234,12 @@ export default function SalePage({ token, mainProducts }) {
         </div>
 
         {/* المنتجات */}
-        <div className="card" style={{ minWidth: 390 }}>
+        <div className="card">
           <div className="section-header">
             <span className="section-title">اختر المنتجات</span>
             <span className="section-count">{products.length} منتج</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="product-list">
             {products.map((p) => {
               const qty = cart[p.id] || 0;
               const mode = cartMode[p.id] || "kg";
@@ -273,7 +277,6 @@ export default function SalePage({ token, mainProducts }) {
                           </button>
                         </div>
 
-                        {/* input */}
                         <input
                           type="number"
                           dir="ltr"
@@ -283,7 +286,6 @@ export default function SalePage({ token, mainProducts }) {
                           style={{ width: 64, textAlign: "center", background: "var(--bg-pill)", border: "1px solid var(--border-subtle)", borderRadius: 4, color: "var(--text-primary)", padding: "4px 6px", fontSize: 13 }}
                         />
 
-                        {/* عرض الكيلو لو الوضع شيكل */}
                         {mode === "shekel" && qty > 0 && (
                           <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{qty.toFixed(2)} كغ</span>
                         )}
@@ -302,8 +304,6 @@ export default function SalePage({ token, mainProducts }) {
           </div>
         </div>
       </div>
-
-
     </div>
   );
 }
