@@ -32,6 +32,7 @@ export function canEditSale(role, sale, currentUserId) {
 
 // شرط الظهور لكل تاب — لازم يبقى بنفس ترتيب TABS بـ TabBar.jsx
 const TAB_VISIBILITY = {
+  dashboard: (role) => canViewDashboard(role),
   sale: () => true,
   products: (role) => canManageProducts(role),
   history: () => true,
@@ -40,4 +41,8 @@ const TAB_VISIBILITY = {
 
 export function getVisibleTabIds(role) {
   return Object.keys(TAB_VISIBILITY).filter((id) => TAB_VISIBILITY[id](role));
+}
+
+export function canViewDashboard(role) {
+  return role === "owner";
 }

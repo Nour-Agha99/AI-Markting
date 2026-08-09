@@ -1,7 +1,8 @@
-import { ShoppingBag, Package, Clock, AlertTriangle, LogOut, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Package, Clock, AlertTriangle, LogOut, Sun, Moon } from "lucide-react";
 import { getVisibleTabIds } from "../utils/roles";
 
 const TABS = [
+  { id: "dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
   { id: "sale", label: "بيع", icon: ShoppingBag },
   { id: "products", label: "منتجات", icon: Package },
   { id: "history", label: "السجل", icon: Clock },

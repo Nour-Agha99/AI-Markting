@@ -1,3 +1,5 @@
+import { loginUser, logoutUser, getProducts, sendHeartbeat } from "./services/dataService";
+import { ROLE_LABELS, ROLE_COLORS, getVisibleTabIds } from "./utils/roles";
 import { useState, useEffect, useCallback } from "react";
 import TabBar from "./components/TabBar";
 import TopNav from "./components/TopNav";
@@ -6,10 +8,10 @@ import SalePage from "./pages/SalePage";
 import ProductsPage from "./pages/ProductsPage";
 import DebtsPage from "./pages/DebtsPage";
 import HistoryPage from "./pages/HistoryPage";
-import { loginUser, logoutUser, getProducts, sendHeartbeat } from "./services/dataService";
-import { ROLE_LABELS, ROLE_COLORS, getVisibleTabIds } from "./utils/roles";
+import DashboardPage from "./pages/DashboardPage";
 
 const PAGE_TITLES = {
+  dashboard: "لوحة التحكم",
   sale: "تسجيل بيع",
   products: "المنتجات",
   history: "السجل",
@@ -225,6 +227,9 @@ function App() {
         </div>
 
         <main style={{ paddingBottom: 90 }}>
+          {activeTab === "dashboard" && (
+            <DashboardPage mainProducts={mainProducts} token={authToken} onApiError={handleApiError} />
+          )}
           {activeTab === "sale" && (
             <SalePage mainProducts={mainProducts} refreshProducts={refreshProducts} onApiError={handleApiError} token={authToken} role={userRole} />
           )}
