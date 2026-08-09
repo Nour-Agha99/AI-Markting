@@ -30,8 +30,8 @@ export default function DebtsPage({ token, role, onApiError }) {
   }
 
   async function handlePay(debt, full) {
-    const paid = Number(debt.max_paidAmount) || 0;
-    const remaining = debt.sum_lineTotal - paid;
+    const paid = Number(debt.paidAmount) || 0;
+    const remaining = debt.totalAmount - paid;
     const amount = full ? remaining : parseFloat(payAmount);
 
     if (!amount || amount <= 0) return;
@@ -59,8 +59,8 @@ export default function DebtsPage({ token, role, onApiError }) {
   }
 
   const debtsWithStatus = debts.map((d) => {
-    const paid = Number(d.max_paidAmount) || 0;
-    const remaining = d.sum_lineTotal - paid;
+    const paid = Number(d.paidAmount) || 0;
+    const remaining = d.totalAmount - paid;
     return { ...d, paid, remaining, isPaid: remaining <= 0 };
   });
 
@@ -88,7 +88,7 @@ export default function DebtsPage({ token, role, onApiError }) {
           <div key={d.id} className="debt-row">
             <div className="debt-row-top">
               <div className="debt-name-block">
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{d.customerName}</div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>{d.customerName || "بدون اسم"}</div>
                 <div style={{ color: "var(--text-secondary)", fontSize: 12, display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
                   <Clock size={12} />
                   {new Date(d.date).toLocaleDateString("ar-EG")}
@@ -100,7 +100,7 @@ export default function DebtsPage({ token, role, onApiError }) {
                 </div>
                 {d.paid > 0 && !d.isPaid && (
                   <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                    مدفوع ₪{d.paid.toFixed(2)} من ₪{d.sum_lineTotal.toFixed(2)}
+                    مدفوع ₪{d.paid.toFixed(2)} من ₪{d.totalAmount.toFixed(2)}
                   </div>
                 )}
               </div>

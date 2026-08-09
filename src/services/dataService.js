@@ -165,7 +165,13 @@ export async function recordSale(sale, token) {
 
 export async function getDebts(token) {
   const data = await apiRequest(ENDPOINTS.getDebts, { token });
-  return Array.isArray(data) ? data : [];
+  const debts = Array.isArray(data) ? data : [];
+
+  return debts.map((d) => ({
+    ...d,
+    totalAmount: Number(d.totalAmount),
+    paidAmount: Number(d.paidAmount),
+  }));
 }
 
 export async function recordPayment(debtId, amount, token) {
