@@ -937,6 +937,29 @@ input, select, textarea {
   flex-shrink: 0;
 }
 
+.debt-entry-type {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.debt-modal-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-subtle);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.debt-modal-total-value {
+  font-size: 20px;
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
 .debt-card-actions-compact {
   display: flex;
   justify-content: flex-end;

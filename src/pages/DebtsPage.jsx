@@ -222,23 +222,29 @@ export default function DebtsPage({ token, role, onApiError }) {
             </div>
 
             <div className="debt-entries">
-              {detailsDebt.entries.map((e) => (
-                <div key={e.id} className="debt-entry">
-                  <div>
-                    <div className="debt-entry-meta">{formatEntryDate(e.date)}</div>
-                    {e.notes && <div className="debt-entry-meta">{e.notes}</div>}
-                    {e.remaining > 0 && e.remaining < e.amount && (
-                      <div className="debt-entry-meta">مدفوع ₪{(e.amount - e.remaining).toFixed(2)} من ₪{e.amount.toFixed(2)}</div>
-                    )}
+              {detailsDebt.timeline.map((e) => {
+                const isPurchase = e.type === "purchase";
+                const color = isPurchase ? "var(--color-danger)" : "var(--color-success)";
+                return (
+                  <div key={e.id} className="debt-entry">
+                    <div>
+                      <div className="debt-entry-type" style={{ color }}>
+                        {isPurchase ? "شراء" : "سداد"}
+                      </div>
+                      <div className="debt-entry-meta">{formatEntryDate(e.date)}</div>
+                      {e.notes && <div className="debt-entry-meta">{e.notes}</div>}
+                    </div>
+                    <div className="debt-entry-remaining" style={{ color }}>
+                      {isPurchase ? "+" : "-"}₪{e.amount.toFixed(2)}
+                    </div>
                   </div>
-                  <div
-                    className="debt-entry-remaining"
-                    style={{ color: e.remaining <= 0 ? "var(--color-success)" : "var(--text-primary)" }}
-                  >
-                    {e.remaining <= 0 ? "متسدد" : `₪${e.remaining.toFixed(2)}`}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+
+            <div className="debt-modal-total-row">
+              <span>المتبقي الإجمالي</span>
+              <span className="debt-modal-total-value">₪{detailsDebt.remaining.toFixed(2)}</span>
             </div>
           </div>
         </div>

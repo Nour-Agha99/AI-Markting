@@ -172,11 +172,10 @@ export async function getDebts(token) {
     salesCount: Number(d.salesCount),
     totalAmount: Number(d.totalAmount),
     paidAmount: Number(d.paidAmount),
-    entries: Array.isArray(d.entries)
-      ? d.entries.map((e) => ({
+    timeline: Array.isArray(d.timeline)
+      ? d.timeline.map((e) => ({
           ...e,
           amount: Number(e.amount),
-          remaining: Number(e.remaining),
         }))
       : [],
   }));
