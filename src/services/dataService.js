@@ -169,16 +169,24 @@ export async function getDebts(token) {
 
   return debts.map((d) => ({
     ...d,
+    salesCount: Number(d.salesCount),
     totalAmount: Number(d.totalAmount),
     paidAmount: Number(d.paidAmount),
+    entries: Array.isArray(d.entries)
+      ? d.entries.map((e) => ({
+          ...e,
+          amount: Number(e.amount),
+          remaining: Number(e.remaining),
+        }))
+      : [],
   }));
 }
 
-export async function recordPayment(debtId, amount, token) {
+export async function recordPayment(customerName, amount, token) {
   return apiRequest(ENDPOINTS.payDebt, {
     method: "POST",
     token,
-    body: { id: debtId, amount },
+    body: { customerName, amount },
   });
 
 }
