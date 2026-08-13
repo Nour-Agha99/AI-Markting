@@ -291,17 +291,27 @@ textarea {
   justify-content: space-around;
   padding: 10px 0;
   border-radius: 999px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid #06215b;
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  background: transparent;
+  border: none;
 }
 
 .tab-item.active {
-  color: var(--color-primary);
+  color: var(--text-primary);
 }
 
 .tab-item.active .tab-icon-bg {
-  background-color: var(--color-primary-soft);
-  border-radius: var(--radius-pill);
-  padding: 6px 16px;
+  background-color: var(--bg-card-alt);
+  border-radius: var(--radius-sm);
 }
 
 .product-row {
