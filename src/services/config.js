@@ -13,4 +13,8 @@ export const ENDPOINTS = {
   putDebt: `${N8N_BASE_URL}/putDebt`,
   getHistory: `${N8N_BASE_URL}/getHistory`,
   heartbeat: `${N8N_BASE_URL}/heartbeat`,
+  getUsers: `${N8N_BASE_URL}/getUsers`,
+  saveUser: `${N8N_BASE_URL}/putUser`,
+  toggleUserStatus: `${N8N_BASE_URL}/toggleUserStatus`,
+  forceLogoutUser: `${N8N_BASE_URL}/forceLogoutUser`,
 };

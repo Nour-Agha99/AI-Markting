@@ -1084,3 +1084,106 @@ input, select, textarea {
   white-space: nowrap;
   flex-shrink: 0;
 }
+/* ============================================
+   صفحة المستخدمين (Users Page)
+   ============================================ */
+
+.users-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 968px) {
+  .users-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: start;
+    gap: 12px;
+  }
+}
+
+.user-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.user-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.user-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-subtle);
+  font-size: 12.5px;
+}
+
+.user-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.user-disabled-chip {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+.presence-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.presence-dot.online {
+  background: var(--color-success);
+  animation: presence-pulse 2s ease-out infinite;
+}
+
+.user-presence {
+  position: absolute;
+  bottom: -1px;
+  left: -1px;
+  border: 2px solid var(--bg-card);
+}
+
+@keyframes presence-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presence-dot.online {
+    animation: none;
+  }
+}

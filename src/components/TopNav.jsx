@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingBag, Package, Clock, AlertTriangle, LogOut, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Package, Clock, AlertTriangle, Users, LogOut, Sun, Moon } from "lucide-react";
 import { getVisibleTabIds } from "../utils/roles";
 
 const TABS = [
@@ -7,6 +7,7 @@ const TABS = [
   { id: "products", label: "منتجات", icon: Package },
   { id: "history", label: "السجل", icon: Clock },
   { id: "debts", label: "الديون", icon: AlertTriangle },
+  { id: "users", label: "المستخدمون", icon: Users },
 ];
 
 export default function TopNav({

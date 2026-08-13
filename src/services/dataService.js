@@ -202,3 +202,69 @@ export async function getHistory(token) {
 export async function sendHeartbeat(token) {
   return apiRequest(ENDPOINTS.heartbeat, { method: "POST", token });
 }
+
+// ---------- المستخدمين (أونر فقط) ----------
+
+export async function getUsers(token) {
+  const data = await apiRequest(ENDPOINTS.getUsers, { token });
+
+  if (!data?.success) {
+    const error = new Error(data?.error || "ما قدرنا نجيب المستخدمين، حاول مرة ثانية.");
+    error.code = data?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+
+  const users = Array.isArray(data?.users) ? data.users : [];
+
+  return users.map((u) => ({
+    id: u.id,
+    username: u.username,
+    fullName: u.fullName,
+    role: u.role,
+    isEnabled: !!u.isEnabled,
+    isOnline: !!u.isOnline,
+    lastSeenAt: u.lastSeenAt || null,
+  }));
+}
+
+export async function saveUser(user, token) {
+  const response = await apiRequest(ENDPOINTS.saveUser, {
+    method: "PUT",
+    token,
+    body: user,
+  });
+  if (!response?.success) {
+    const error = new Error(response?.error || "حصل خطأ أثناء حفظ المستخدم.");
+    error.code = response?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+  return response.user;
+}
+
+export async function toggleUserStatus(id, token) {
+  const response = await apiRequest(ENDPOINTS.toggleUserStatus, {
+    method: "PATCH",
+    token,
+    body: { id },
+  });
+  if (!response?.success) {
+    const error = new Error(response?.error || "حصل خطأ أثناء تحديث حالة المستخدم.");
+    error.code = response?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+  return response;
+}
+
+export async function forceLogoutUser(id, token) {
+  const response = await apiRequest(ENDPOINTS.forceLogoutUser, {
+    method: "POST",
+    token,
+    body: { id },
+  });
+  if (!response?.success) {
+    const error = new Error(response?.error || "ما قدرنا ننهي جلسات المستخدم.");
+    error.code = response?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+  return response;
+}

@@ -17,6 +17,11 @@ export function canManageProducts(role) {
   return (ROLE_LEVELS[role] || 0) >= ROLE_LEVELS.admin;
 }
 
+// أونر بس يقدر يدير المستخدمين (إضافة/تعديل/تعطيل/إنهاء جلسات)
+export function canManageUsers(role) {
+  return role === "owner";
+}
+
 // تعديل بيعة بالسجل:
 // - admin / owner: أي بيعة، بأي وقت
 // - cashier: بيعاته هو بس، وبنفس يوم تسجيلها بس
@@ -30,13 +35,14 @@ export function canEditSale(role, sale, currentUserId) {
   return saleDate.toDateString() === now.toDateString();
 }
 
-// شرط الظهور لكل تاب — لازم يبقى بنفس ترتيب TABS بـ TabBar.jsx
+// شرط الظهور لكل تاب — لازم يبقى بنفس ترتيب TABS بـ TabBar.jsx و TopNav.jsx
 const TAB_VISIBILITY = {
   dashboard: (role) => canViewDashboard(role),
   sale: () => true,
   products: (role) => canManageProducts(role),
   history: () => true,
   debts: () => true,
+  users: (role) => canManageUsers(role),
 };
 
 export function getVisibleTabIds(role) {
