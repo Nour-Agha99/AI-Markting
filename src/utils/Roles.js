@@ -7,9 +7,9 @@ export const ROLE_LABELS = {
 };
 
 export const ROLE_COLORS = {
-  owner: { bg: "rgba(168,85,247,0.12)", text: "#c084fc" },
-  admin: { bg: "rgba(59,130,246,0.12)", text: "#60a5fa" },
-  cashier: { bg: "rgba(156,163,175,0.12)", text: "#d1d5db" },
+  owner: { bg: "rgba(245, 158, 11, 0.14)", text: "#f59e0b" },
+  admin: { bg: "rgba(59, 130, 246, 0.14)", text: "#3b82f6" },
+  cashier: { bg: "rgba(45, 212, 191, 0.14)", text: "#2dd4bf" },
 };
 
 // owner و admin بس يقدروا يديروا المنتجات (إضافة/تعديل/حذف) 
