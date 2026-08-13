@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Edit2, Power, Unplug, X, Search, Users as UsersIcon } from "lucide-react";
+import { Plus, Edit2, Power, Unplug, X, Search, RefreshCw, Users as UsersIcon } from "lucide-react";
 import { getUsers, saveUser, toggleUserStatus, forceLogoutUser } from "../services/dataService";
 import { ROLE_LABELS, ROLE_COLORS } from "../utils/roles";
 
@@ -31,11 +31,35 @@ function lastSeenLabel(u) {
 
 const emptyForm = { fullName: "", username: "", role: "cashier", password: "" };
 
+function UserCardSkeleton() {
+  return (
+    <div className="user-card">
+      <div className="user-card-top">
+        <div className="skeleton" style={{ width: 42, height: 42, borderRadius: "50%", flexShrink: 0 }} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="skeleton" style={{ width: "55%", height: 14 }} />
+          <div className="skeleton" style={{ width: "35%", height: 11 }} />
+        </div>
+        <div className="skeleton" style={{ width: 54, height: 22, borderRadius: 999, flexShrink: 0 }} />
+      </div>
+      <div className="user-card-meta">
+        <div className="skeleton" style={{ width: "45%", height: 11 }} />
+      </div>
+      <div className="user-card-actions">
+        <div className="skeleton" style={{ width: 30, height: 30, borderRadius: "50%" }} />
+        <div className="skeleton" style={{ width: 30, height: 30, borderRadius: "50%" }} />
+        <div className="skeleton" style={{ width: 30, height: 30, borderRadius: "50%" }} />
+      </div>
+    </div>
+  );
+}
+
 export default function UsersPage({ token, currentUsername, onApiError }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -46,6 +70,11 @@ export default function UsersPage({ token, currentUsername, onApiError }) {
   const [confirmToggleId, setConfirmToggleId] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
   const [forceLogoutingId, setForceLogoutingId] = useState(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     refresh();
@@ -157,14 +186,14 @@ export default function UsersPage({ token, currentUsername, onApiError }) {
   }
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     if (!q) return users;
     return users.filter(
       (u) =>
         (u.fullName || "").toLowerCase().includes(q) ||
         (u.username || "").toLowerCase().includes(q)
     );
-  }, [users, search]);
+  }, [users, debouncedSearch]);
 
   const onlineCount = users.filter((u) => u.isOnline).length;
   const roleCounts = users.reduce((acc, u) => {
@@ -177,7 +206,12 @@ export default function UsersPage({ token, currentUsername, onApiError }) {
       <div className="products-toolbar">
         <div className="section-header">
           <span className="section-title">إجمالي المستخدمين</span>
-          <span className="section-count">{users.length}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span className="section-count">{users.length}</span>
+            <button onClick={refresh} disabled={loading} className="icon-btn-refresh">
+              <RefreshCw size={16} className={loading ? "spin" : ""} />
+            </button>
+          </div>
         </div>
 
         <button onClick={openAddForm} className="btn-whatsapp add-product-btn" style={{ background: "var(--color-primary)" }}>
@@ -220,19 +254,22 @@ export default function UsersPage({ token, currentUsername, onApiError }) {
         </div>
       </div>
 
-      <div className="card" style={{ position: "relative" }}>
-        <Search size={16} color="var(--text-secondary)" style={{ position: "absolute", right: 28, top: "50%", transform: "translateY(-50%)" }} />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="ابحث بالاسم أو اسم المستخدم..."
-          style={{ ...inputStyle, paddingRight: 36 }}
-        />
+      <div className="card">
+        <div className="search-box">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ابحث بالاسم أو اسم المستخدم..."
+          />
+          <Search size={17} className="search-box-icon" />
+        </div>
       </div>
 
       {loading && (
-        <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>جاري التحميل...</div>
+        <div className="users-grid">
+          {Array.from({ length: 6 }).map((_, i) => <UserCardSkeleton key={i} />)}
+        </div>
       )}
       {!loading && users.length === 0 && (
         <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>ما في مستخدمين بعد.</div>
@@ -241,99 +278,101 @@ export default function UsersPage({ token, currentUsername, onApiError }) {
         <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>ما في نتيجة مطابقة.</div>
       )}
 
-      <div className="users-grid">
-        {filtered.map((u) => {
-          const palette = avatarStyle(u.fullName);
-          const initial = (u.fullName || "؟").trim().charAt(0);
-          const roleColor = ROLE_COLORS[u.role] || ROLE_COLORS.cashier;
-          const isSelf = u.username === currentUsername;
-          const confirming = confirmToggleId === u.id;
+      {!loading && filtered.length > 0 && (
+        <div className="users-grid">
+          {filtered.map((u) => {
+            const palette = avatarStyle(u.fullName);
+            const initial = (u.fullName || "؟").trim().charAt(0);
+            const roleColor = ROLE_COLORS[u.role] || ROLE_COLORS.cashier;
+            const isSelf = u.username === currentUsername;
+            const confirming = confirmToggleId === u.id;
 
-          return (
-            <div key={u.id} className="user-card">
-              <div className="user-card-top">
-                <div className="user-avatar-wrap">
-                  <div className="debt-avatar" style={{ background: palette.bg, color: palette.text }}>
-                    {initial}
+            return (
+              <div key={u.id} className="user-card">
+                <div className="user-card-top">
+                  <div className="user-avatar-wrap">
+                    <div className="debt-avatar" style={{ background: palette.bg, color: palette.text }}>
+                      {initial}
+                    </div>
+                    <span className={`presence-dot user-presence ${u.isOnline ? "online" : ""}`} />
                   </div>
-                  <span className={`presence-dot user-presence ${u.isOnline ? "online" : ""}`} />
+
+                  <div className="debt-card-info">
+                    <div className="debt-card-name">
+                      {u.fullName}
+                      {isSelf && <span style={{ color: "var(--text-muted)", fontWeight: 400 }}> (أنت)</span>}
+                    </div>
+                    <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 2 }}>@{u.username}</div>
+                  </div>
+
+                  <span className="pill" style={{ background: roleColor.bg, color: roleColor.text, border: "none", fontSize: 12, flexShrink: 0 }}>
+                    {ROLE_LABELS[u.role] || u.role}
+                  </span>
                 </div>
 
-                <div className="debt-card-info">
-                  <div className="debt-card-name">
-                    {u.fullName}
-                    {isSelf && <span style={{ color: "var(--text-muted)", fontWeight: 400 }}> (أنت)</span>}
-                  </div>
-                  <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 2 }}>@{u.username}</div>
+                <div className="user-card-meta">
+                  <span style={{ color: u.isOnline ? "var(--color-success)" : "var(--text-muted)" }}>
+                    {lastSeenLabel(u)}
+                  </span>
+                  {!u.isEnabled && <span className="user-disabled-chip">معطّل</span>}
                 </div>
 
-                <span className="pill" style={{ background: roleColor.bg, color: roleColor.text, border: "none", fontSize: 12, flexShrink: 0 }}>
-                  {ROLE_LABELS[u.role] || u.role}
-                </span>
-              </div>
+                <div className="user-card-actions">
+                  <button onClick={() => openEditForm(u)} className="debt-icon-btn" title="تعديل">
+                    <Edit2 size={15} />
+                  </button>
 
-              <div className="user-card-meta">
-                <span style={{ color: u.isOnline ? "var(--color-success)" : "var(--text-muted)" }}>
-                  {lastSeenLabel(u)}
-                </span>
-                {!u.isEnabled && <span className="user-disabled-chip">معطّل</span>}
-              </div>
+                  <button
+                    onClick={() => handleForceLogout(u.id)}
+                    disabled={forceLogoutingId === u.id || !u.isOnline}
+                    className="debt-icon-btn"
+                    title="إنهاء الجلسات"
+                    style={{ opacity: u.isOnline ? 1 : 0.4 }}
+                  >
+                    <Unplug size={15} />
+                  </button>
 
-              <div className="user-card-actions">
-                <button onClick={() => openEditForm(u)} className="debt-icon-btn" title="تعديل">
-                  <Edit2 size={15} />
-                </button>
-
-                <button
-                  onClick={() => handleForceLogout(u.id)}
-                  disabled={forceLogoutingId === u.id || !u.isOnline}
-                  className="debt-icon-btn"
-                  title="إنهاء الجلسات"
-                  style={{ opacity: u.isOnline ? 1 : 0.4 }}
-                >
-                  <Unplug size={15} />
-                </button>
-
-                {confirming ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {confirming ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <button
+                        onClick={() => handleToggle(u.id)}
+                        disabled={togglingId === u.id}
+                        className="pill"
+                        style={{
+                          background: u.isEnabled ? "var(--color-danger)" : "var(--color-success)",
+                          color: "white",
+                          fontSize: 12,
+                          padding: "6px 12px",
+                          border: "none",
+                        }}
+                      >
+                        {togglingId === u.id ? "..." : u.isEnabled ? "تأكيد التعطيل" : "تأكيد التفعيل"}
+                      </button>
+                      <button onClick={() => setConfirmToggleId(null)} className="debt-icon-btn">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
                     <button
-                      onClick={() => handleToggle(u.id)}
-                      disabled={togglingId === u.id}
-                      className="pill"
+                      onClick={() => setConfirmToggleId(u.id)}
+                      disabled={isSelf}
+                      className="debt-icon-btn"
+                      title={u.isEnabled ? "تعطيل الحساب" : "تفعيل الحساب"}
                       style={{
-                        background: u.isEnabled ? "var(--color-danger)" : "var(--color-success)",
-                        color: "white",
-                        fontSize: 12,
-                        padding: "6px 12px",
-                        border: "none",
+                        opacity: isSelf ? 0.35 : 1,
+                        color: u.isEnabled ? "var(--color-danger)" : "var(--color-success)",
+                        borderColor: u.isEnabled ? "var(--color-danger)" : "var(--color-success)",
                       }}
                     >
-                      {togglingId === u.id ? "..." : u.isEnabled ? "تأكيد التعطيل" : "تأكيد التفعيل"}
+                      <Power size={15} />
                     </button>
-                    <button onClick={() => setConfirmToggleId(null)} className="debt-icon-btn">
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmToggleId(u.id)}
-                    disabled={isSelf}
-                    className="debt-icon-btn"
-                    title={u.isEnabled ? "تعطيل الحساب" : "تفعيل الحساب"}
-                    style={{
-                      opacity: isSelf ? 0.35 : 1,
-                      color: u.isEnabled ? "var(--color-danger)" : "var(--color-success)",
-                      borderColor: u.isEnabled ? "var(--color-danger)" : "var(--color-success)",
-                    }}
-                  >
-                    <Power size={15} />
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {showForm && (
         <div style={overlayStyle} onClick={() => setShowForm(false)}>

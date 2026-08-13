@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CalendarClock, CheckCircle2, X, Users, List, Wallet, Check, Search } from "lucide-react";
+import { CalendarClock, CheckCircle2, X, Users, List, Wallet, Check, Search, RefreshCw } from "lucide-react";
 import { getDebts, recordPayment } from "../services/dataService";
 
 const AVATAR_PALETTE = [
@@ -19,6 +19,31 @@ function avatarStyle(name) {
 function formatEntryDate(dateStr) {
   const d = new Date(dateStr);
   return `${d.toLocaleDateString("ar-EG")} · ${d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function DebtCardSkeleton() {
+  return (
+    <div className="debt-card">
+      <div className="debt-progress-track">
+        <div className="skeleton" style={{ width: "45%", height: "100%" }} />
+      </div>
+      <div className="debt-card-top">
+        <div className="skeleton" style={{ width: 42, height: 42, borderRadius: "50%", flexShrink: 0 }} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="skeleton" style={{ width: "55%", height: 14 }} />
+          <div className="skeleton" style={{ width: "40%", height: 11 }} />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+          <div className="skeleton" style={{ width: 60, height: 16 }} />
+          <div className="skeleton" style={{ width: 45, height: 10 }} />
+        </div>
+      </div>
+      <div className="debt-card-actions-compact">
+        <div className="skeleton" style={{ width: 34, height: 34, borderRadius: "50%" }} />
+        <div className="skeleton" style={{ width: 34, height: 34, borderRadius: "50%" }} />
+      </div>
+    </div>
+  );
 }
 
 export default function DebtsPage({ token, role, onApiError }) {
@@ -119,6 +144,12 @@ export default function DebtsPage({ token, role, onApiError }) {
           {errorMsg}
         </div>
       )}
+      <div className="section-header">
+        <span className="section-title">الديون</span>
+        <button onClick={refresh} disabled={loading} className="icon-btn-refresh">
+          <RefreshCw size={16} className={loading ? "spin" : ""} />
+        </button>
+      </div>
 
       <div className="debts-stats-row">
         <div className="stat-card danger stat-card-highlight stat-card-side-accent" style={{ textAlign: "center" }}>
@@ -147,15 +178,24 @@ export default function DebtsPage({ token, role, onApiError }) {
         </div>
       </div>
 
+
       <div className="debts-list">
-        {loading && <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>جاري التحميل...</div>}
+        {loading && (
+          <>
+            <DebtCardSkeleton />
+            <DebtCardSkeleton />
+            <DebtCardSkeleton />
+            <DebtCardSkeleton />
+          </>
+        )}
         {!loading && debtsWithStatus.length === 0 && (
           <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>ما في ديون مسجلة.</div>
         )}
         {!loading && debtsWithStatus.length > 0 && filteredDebts.length === 0 && (
           <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>ما في زبون بهاد الاسم.</div>
         )}
-        {filteredDebts.map((d) => {
+        {!loading && filteredDebts.map((d) => {
+
           const palette = avatarStyle(d.customerName);
           const initial = (d.customerName || "؟").trim().charAt(0);
 

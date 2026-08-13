@@ -24,27 +24,21 @@ const TYPE_META = {
 
 function isWithinRange(dateStr, filter) {
   if (filter === "all") return true;
-
   const date = new Date(dateStr);
   date.setHours(0, 0, 0, 0);
-
   const now = new Date();
   now.setHours(0, 0, 0, 0);
-
   if (filter === "day") return date.getTime() === now.getTime();
-
   if (filter === "week") {
     const weekAgo = new Date(now);
     weekAgo.setDate(now.getDate() - 7);
     return date >= weekAgo;
   }
-
   if (filter === "month") {
     const monthAgo = new Date(now);
     monthAgo.setMonth(now.getMonth() - 1);
     return date >= monthAgo;
   }
-
   return true;
 }
 
@@ -53,7 +47,6 @@ function dayLabel(dateStr) {
   const now = new Date();
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-
   if (date.toDateString() === now.toDateString()) return "اليوم";
   if (date.toDateString() === yesterday.toDateString()) return "امبارح";
   return date.toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" });
@@ -61,6 +54,34 @@ function dayLabel(dateStr) {
 
 function dayKey(dateStr) {
   return new Date(dateStr).toDateString();
+}
+
+function HistoryRowSkeleton() {
+  return (
+    <div className="history-row">
+      <div className="skeleton" style={{ width: 46, height: 24, borderRadius: 999, flexShrink: 0 }} />
+      <div className="history-content" style={{ flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, minWidth: 160 }}>
+          <div className="skeleton" style={{ width: "55%", height: 14 }} />
+          <div className="skeleton" style={{ width: "35%", height: 11 }} />
+        </div>
+        <div className="skeleton" style={{ width: 40, height: 11 }} />
+      </div>
+    </div>
+  );
+}
+
+function HistoryGroupSkeleton({ rows = 3 }) {
+  return (
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
+        <div className="skeleton" style={{ width: 70, height: 12 }} />
+      </div>
+      {Array.from({ length: rows }).map((_, i) => (
+        <HistoryRowSkeleton key={i} />
+      ))}
+    </div>
+  );
 }
 
 export default function HistoryPage({ token }) {
@@ -158,17 +179,19 @@ export default function HistoryPage({ token }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {loading && (
-          <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>
-            جاري التحميل...
-          </div>
+          <>
+            <HistoryGroupSkeleton rows={4} />
+            <HistoryGroupSkeleton rows={2} />
+          </>
         )}
+
         {!loading && groups.length === 0 && (
           <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>
             ما في عمليات تطابق هاد الفلتر.
           </div>
         )}
 
-        {groups.map((group) => (
+        {!loading && groups.map((group) => (
           <div key={group.label} className="card" style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ padding: "12px 16px", color: "var(--text-secondary)", fontSize: 13, borderBottom: "1px solid var(--border-subtle)" }}>
               {group.label}

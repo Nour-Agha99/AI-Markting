@@ -291,27 +291,17 @@ textarea {
   justify-content: space-around;
   padding: 10px 0;
   border-radius: 999px;
-  border: 1px solid #06215b;
-}
-
-.tab-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  background: transparent;
-  border: none;
+  border: 1px solid var(--border-subtle);
 }
 
 .tab-item.active {
-  color: var(--text-primary);
+  color: var(--color-primary);
 }
 
 .tab-item.active .tab-icon-bg {
-  background-color: var(--bg-card-alt);
-  border-radius: var(--radius-sm);
+  background-color: var(--color-primary-soft);
+  border-radius: var(--radius-pill);
+  padding: 6px 16px;
 }
 
 .product-row {
@@ -1537,4 +1527,23 @@ textarea {
   .presence-dot.online {
     animation: none;
   }
+}
+
+/* ============================================
+   Skeleton Loading
+   ============================================ */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-pill) 25%, var(--bg-card-alt) 37%, var(--bg-pill) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; opacity: 0.6; }
 }
