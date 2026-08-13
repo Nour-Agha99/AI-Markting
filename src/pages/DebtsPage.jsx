@@ -121,11 +121,11 @@ export default function DebtsPage({ token, role, onApiError }) {
       )}
 
       <div className="debts-stats-row">
-        <div className="stat-card danger stat-card-highlight" style={{ textAlign: "center" }}>
+        <div className="stat-card danger stat-card-highlight stat-card-side-accent" style={{ textAlign: "center" }}>
           <div className="stat-label">إجمالي الديون المستحقة</div>
           <div className="stat-value">₪{totalDebt.toFixed(2)}</div>
         </div>
-        <div className="stat-card primary stat-card-highlight" style={{ textAlign: "center" }}>
+        <div className="stat-card primary stat-card-highlight stat-card-side-accent" style={{ textAlign: "center" }}>
           <div className="stat-label">
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
               <Users size={13} /> عدد الزبائن المدينين
@@ -135,15 +135,16 @@ export default function DebtsPage({ token, role, onApiError }) {
         </div>
       </div>
 
-      <div className="card" style={{ position: "relative" }}>
-        <Search size={16} color="var(--text-secondary)" style={{ position: "absolute", right: 28, top: "50%", transform: "translateY(-50%)" }} />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="ابحث باسم الزبون..."
-          style={{ ...inputStyle, paddingRight: 36 }}
-        />
+      <div className="card">
+        <div className="search-box">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ابحث باسم الزبون..."
+          />
+          <Search size={17} className="search-box-icon" />
+        </div>
       </div>
 
       <div className="debts-list">

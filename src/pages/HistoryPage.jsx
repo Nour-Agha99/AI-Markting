@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, RefreshCw } from "lucide-react";
+import { Search, RefreshCw, ChevronDown } from "lucide-react";
 import { getHistory } from "../services/dataService";
 
 const DATE_FILTERS = [
@@ -63,16 +63,6 @@ function dayKey(dateStr) {
   return new Date(dateStr).toDateString();
 }
 
-function itemsSummary(items, maxItems = 3) {
-  if (!items || items.length === 0) return "";
-
-  const shown = items.slice(0, maxItems);
-  const summary = shown.map((it) => `${it.name} ${it.qty}${it.unit === "kg" ? "كغ" : ""}`).join(" · ");
-
-  const remaining = items.length - maxItems;
-  return remaining > 0 ? `${summary} +${remaining} منتجات أخرى` : summary;
-}
-
 export default function HistoryPage({ token }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,18 +118,8 @@ export default function HistoryPage({ token }) {
       <div className="section-header">
         <span className="section-title">السجل</span>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span className="section-count">
-            {filtered.length > visibleCount && (
-              <button
-                onClick={() => setVisibleCount((v) => v + 30)}
-                className="pill"
-                style={{ justifyContent: "center", width: "100%" }}
-              >
-                عرض المزيد ({filtered.length - visibleCount} متبقي)
-              </button>
-            )}
-          </span>
-          <button onClick={refresh} disabled={loading} style={{ ...iconBtnStyle, opacity: loading ? 0.5 : 1 }}>
+          <span className="section-count">{filtered.length} عملية</span>
+          <button onClick={refresh} disabled={loading} className="icon-btn-refresh">
             <RefreshCw size={16} className={loading ? "spin" : ""} />
           </button>
         </div>
@@ -152,15 +132,14 @@ export default function HistoryPage({ token }) {
       )}
 
       <div className="card" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ position: "relative" }}>
-          <Search size={16} color="var(--text-secondary)" style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)" }} />
+        <div className="search-box">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="ابحث باسم الزبون..."
-            style={{ ...inputStyle, paddingRight: 36 }}
           />
+          <Search size={17} className="search-box-icon" />
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -197,7 +176,6 @@ export default function HistoryPage({ token }) {
 
             {group.items.map((r) => {
               const meta = TYPE_META[r.type] || TYPE_META.sale;
-              const summary = itemsSummary(r.items);
               return (
                 <div key={r.id} className="history-row">
                   <span className="history-badge" style={{ background: meta.soft, color: meta.color }}>
@@ -210,11 +188,19 @@ export default function HistoryPage({ token }) {
                         {r.customerName || "بدون اسم"}
                         <span style={{ color: meta.color }}> — ₪{Number(r.amount).toFixed(2)}</span>
                       </div>
-                      {summary && (
-                        <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 2 }}>{summary}</div>
+
+                      {r.items && r.items.length > 0 && (
+                        <div className="history-items-list">
+                          {r.items.map((it, idx) => (
+                            <span key={idx} className="history-item-chip">
+                              {it.name} <b>{it.qty}{it.unit === "kg" ? "كغ" : ""}</b>
+                            </span>
+                          ))}
+                        </div>
                       )}
+
                       {r.notes && (
-                        <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>{r.notes}</div>
+                        <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 6 }}>{r.notes}</div>
                       )}
                     </div>
                     <div className="history-time">
@@ -227,28 +213,17 @@ export default function HistoryPage({ token }) {
             })}
           </div>
         ))}
+
+        {!loading && filtered.length > visibleCount && (
+          <div className="load-more-wrap">
+            <button onClick={() => setVisibleCount((v) => v + 30)} className="load-more-btn">
+              <ChevronDown size={16} />
+              عرض المزيد
+              <span className="load-more-count">({filtered.length - visibleCount} متبقي)</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-const inputStyle = {
-  width: "100%",
-  background: "var(--bg-pill)",
-  border: "1px solid var(--border-subtle)",
-  borderRadius: "var(--radius-sm)",
-  padding: "10px 12px",
-  color: "var(--text-primary)",
-  fontSize: 14,
-  outline: "none",
-};
-const iconBtnStyle = {
-  width: 30,
-  height: 30,
-  borderRadius: "50%",
-  border: "none",
-  background: "var(--bg-pill)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};

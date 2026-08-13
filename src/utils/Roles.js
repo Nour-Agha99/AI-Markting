@@ -7,19 +7,14 @@ export const ROLE_LABELS = {
 };
 
 export const ROLE_COLORS = {
-  owner: { bg: "rgba(168,85,247,0.12)", text: "#c084fc" },
-  admin: { bg: "rgba(59,130,246,0.12)", text: "#60a5fa" },
-  cashier: { bg: "rgba(156,163,175,0.12)", text: "#d1d5db" },
+  owner: { bg: "rgba(245, 158, 11, 0.14)", text: "#f59e0b" },
+  admin: { bg: "rgba(59, 130, 246, 0.14)", text: "#3b82f6" },
+  cashier: { bg: "rgba(45, 212, 191, 0.14)", text: "#2dd4bf" },
 };
 
 // owner و admin بس يقدروا يديروا المنتجات (إضافة/تعديل/حذف) 
 export function canManageProducts(role) {
   return (ROLE_LEVELS[role] || 0) >= ROLE_LEVELS.admin;
-}
-
-// أونر بس يقدر يدير المستخدمين (إضافة/تعديل/تعطيل/إنهاء جلسات)
-export function canManageUsers(role) {
-  return role === "owner";
 }
 
 // تعديل بيعة بالسجل:
@@ -35,14 +30,12 @@ export function canEditSale(role, sale, currentUserId) {
   return saleDate.toDateString() === now.toDateString();
 }
 
-// شرط الظهور لكل تاب — لازم يبقى بنفس ترتيب TABS بـ TabBar.jsx و TopNav.jsx
 const TAB_VISIBILITY = {
   dashboard: (role) => canViewDashboard(role),
   sale: () => true,
   products: (role) => canManageProducts(role),
   history: () => true,
   debts: () => true,
-  users: (role) => canManageUsers(role),
 };
 
 export function getVisibleTabIds(role) {
