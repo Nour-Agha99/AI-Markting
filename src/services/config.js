@@ -17,4 +17,5 @@ export const ENDPOINTS = {
   saveUser: `${N8N_BASE_URL}/putUser`,
   toggleUserStatus: `${N8N_BASE_URL}/toggleUserStatus`,
   forceLogoutUser: `${N8N_BASE_URL}/forceLogoutUser`,
+  getActivityLog: `${N8N_BASE_URL}/getActivityLog`,
 };

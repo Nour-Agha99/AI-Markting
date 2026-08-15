@@ -285,33 +285,48 @@ textarea {
 }
 
 .tab-bar {
-  background-color: var(--bg-tab);
-  border-top: 1px solid var(--border-subtle);
   display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-radius: 999px;
-  border: 1px solid #06215b;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-tab);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 10px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-item {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  flex-shrink: 0;
   color: var(--text-secondary);
-  font-size: 12px;
-  background: transparent;
-  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--bg-pill);
+  border: 1px solid var(--border-subtle);
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-item .tab-icon-bg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-item.active {
-  color: var(--text-primary);
-}
-
-.tab-item.active .tab-icon-bg {
-  background-color: var(--bg-card-alt);
-  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary);
 }
 
 .product-row {
@@ -437,16 +452,11 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 100px;
 }
 
 .mobile-nav-wrapper {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 660px;
+  position: sticky;
+  top: 0;
   z-index: 200;
 }
 
@@ -1435,7 +1445,9 @@ textarea {
 .search-box input:focus~.search-box-icon {
   color: var(--color-primary);
   transform: scale(1.1);
-}/* ============================================
+}
+
+/* ============================================
    صفحة المستخدمين (Users Page)
    ============================================ */
 
@@ -1500,6 +1512,7 @@ textarea {
   padding: 3px 9px;
   border-radius: var(--radius-pill);
 }
+
 .presence-dot {
   width: 8px;
   height: 8px;
@@ -1525,9 +1538,11 @@ textarea {
   0% {
     box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
   }
+
   70% {
     box-shadow: 0 0 0 7px rgba(34, 197, 94, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
   }
@@ -1550,10 +1565,18 @@ textarea {
 }
 
 @keyframes skeleton-shimmer {
-  0% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton { animation: none; opacity: 0.6; }
+  .skeleton {
+    animation: none;
+    opacity: 0.6;
+  }
 }

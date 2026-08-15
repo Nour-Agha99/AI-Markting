@@ -268,3 +268,27 @@ export async function forceLogoutUser(id, token) {
   }
   return response;
 }
+
+export async function getActivityLog({ limit = 30, offset = 0, userId = null, actions = null } = {}, token) {
+  const params = new URLSearchParams();
+  params.set("limit", String(limit));
+  params.set("offset", String(offset));
+  if (userId) params.set("userId", userId);
+  if (actions && actions.length > 0) params.set("actions", actions.join(","));
+
+  const data = await apiRequest(`${ENDPOINTS.getActivityLog}?${params.toString()}`, { token });
+
+  if (!data?.success) {
+    const error = new Error(data?.error || "ما قدرنا نجيب سجل النشاطات.");
+    error.code = data?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+
+  const items = Array.isArray(data?.items) ? data.items : [];
+
+  return {
+    items,
+    hasMore: !!data.hasMore,
+    nextOffset: Number(data.nextOffset ?? offset + items.length),
+  };
+}

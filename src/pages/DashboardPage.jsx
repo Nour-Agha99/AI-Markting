@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, Wallet, RefreshCw } from "lucide-react";
-import { getHistory } from "../services/dataService";
+import { TrendingUp, TrendingDown, AlertTriangle, Wallet, RefreshCw, ArrowLeft } from "lucide-react";
+import { getHistory, getActivityLog } from "../services/dataService";
+import { getActionMeta } from "./ActivityLogPage";
 
 function isToday(dateStr) {
   const d = new Date(dateStr);
@@ -24,13 +25,16 @@ function isLast30Days(dateStr) {
   return d >= monthAgo;
 }
 
-export default function DashboardPage({ token, mainProducts, onApiError }) {
+export default function DashboardPage({ token, mainProducts, onApiError, onNavigate }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
 
   useEffect(() => {
     refresh();
+    refreshActivity();
   }, [token]);
 
   function refresh() {
@@ -46,6 +50,16 @@ export default function DashboardPage({ token, mainProducts, onApiError }) {
         }
       })
       .finally(() => setLoading(false));
+  }
+
+  function refreshActivity() {
+    setActivityLoading(true);
+    getActivityLog({ limit: 5, offset: 0 }, token)
+      .then((data) => setRecentActivity(data.items))
+      .catch(() => {
+        setRecentActivity([]);
+      })
+      .finally(() => setActivityLoading(false));
   }
 
   // إيرادات = بيع نقدي أو دين، بدون سداد الديون (تجنب الاحتساب المزدوج)
@@ -166,6 +180,81 @@ export default function DashboardPage({ token, mainProducts, onApiError }) {
         ⚠️ ملاحظة: الأرقام أعلاه بتمثل <b>الإيراد</b> (قيمة المبيعات) مش صافي الربح، لأنه
         سجل العمليات الحالي ما بيخزّن سعر التكلفة وقت كل عملية بيع. لحساب الربح الحقيقي بدقة
         محتاجين تعديل بسيط على استعلام السجل بالباك إند.
+      </div>
+
+      {/* ---------- ويدجت آخر النشاطات ---------- */}
+      <div className="card">
+        <div className="section-header">
+          <span className="section-title">آخر النشاطات</span>
+          <button
+            onClick={() => onNavigate?.("activityLog")}
+            className="pill"
+            style={{
+              background: "var(--color-primary-soft)",
+              color: "var(--color-primary)",
+              border: "none",
+              fontSize: 12,
+              padding: "6px 12px",
+            }}
+          >
+            عرض الكل
+            <ArrowLeft size={13} />
+          </button>
+        </div>
+
+        {activityLoading && (
+          <div style={{ color: "var(--text-secondary)", textAlign: "center", padding: 12 }}>
+            جاري التحميل...
+          </div>
+        )}
+        {!activityLoading && recentActivity.length === 0 && (
+          <div style={{ color: "var(--text-secondary)", textAlign: "center", padding: 12 }}>
+            ما في نشاطات مسجلة بعد.
+          </div>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {recentActivity.map((it) => {
+            const meta = getActionMeta(it.action);
+            const Icon = meta.icon;
+            return (
+              <div
+                key={it.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 12px",
+                  background: "var(--bg-card-alt)",
+                  borderRadius: "var(--radius-sm)",
+                }}
+              >
+                <span
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    background: meta.soft,
+                    color: meta.color,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon size={14} />
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>
+                    {it.userName} <span style={{ color: meta.color, fontWeight: 500 }}>· {meta.label}</span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                  {it.date ? new Date(it.date).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : ""}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="dashboard-products-grid">

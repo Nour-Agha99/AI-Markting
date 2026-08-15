@@ -21,6 +21,11 @@ export function canManageUsers(role) {
   return role === "owner";
 }
 
+// سجل النشاطات (Audit Log) — أونر بس، فيه بيانات إدارية/أمنية حساسة
+export function canViewActivityLog(role) {
+  return role === "owner";
+}
+
 // تعديل بيعة بالسجل:
 // - admin / owner: أي بيعة، بأي وقت
 // - cashier: بيعاته هو بس، وبنفس يوم تسجيلها بس
@@ -40,6 +45,7 @@ const TAB_VISIBILITY = {
   products: (role) => canManageProducts(role),
   history: () => true,
   debts: () => true,
+  activityLog: (role) => canViewActivityLog(role),
   users: (role) => canManageUsers(role),
 };
 

@@ -1,7 +1,7 @@
 import { loginUser, logoutUser, getProducts, sendHeartbeat } from "./services/dataService";
+import { LogOut, Sun, Moon } from "lucide-react";
 import { ROLE_LABELS, ROLE_COLORS, getVisibleTabIds } from "./utils/roles";
 import { useState, useEffect, useCallback } from "react";
-import {  Sun, Moon } from "lucide-react";
 import TabBar from "./components/TabBar";
 import TopNav from "./components/TopNav";
 import LoginPage from "./pages/LoginPage";
@@ -11,6 +11,7 @@ import DebtsPage from "./pages/DebtsPage";
 import HistoryPage from "./pages/HistoryPage";
 import DashboardPage from "./pages/DashboardPage";
 import UsersPage from "./pages/UsersPage";
+import ActivityLogPage from "./pages/ActivityLogPage";
 
 const PAGE_TITLES = {
   dashboard: "لوحة التحكم",
@@ -18,6 +19,7 @@ const PAGE_TITLES = {
   products: "المنتجات",
   history: "السجل",
   debts: "الديون",
+  activityLog: "سجل النشاطات",
   users: "المستخدمون",
 };
 
@@ -213,6 +215,10 @@ function App() {
       />
 
       <div className="app-shell">
+
+        <div className="mobile-nav-wrapper">
+          <TabBar activeTab={activeTab} onChange={setActiveTab} role={userRole} />
+        </div>
         <header className="mobile-header">
           <h1 style={{ fontSize: 18, fontWeight: 700 }}>{PAGE_TITLES[activeTab]}</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -232,13 +238,14 @@ function App() {
           </div>
         </header>
 
-        <div className="mobile-nav-wrapper">
-          <TabBar activeTab={activeTab} onChange={setActiveTab} role={userRole} />
-        </div>
-
         <main style={{ paddingBottom: 90 }}>
           {activeTab === "dashboard" && (
-            <DashboardPage mainProducts={mainProducts} token={authToken} onApiError={handleApiError} />
+            <DashboardPage
+              mainProducts={mainProducts}
+              token={authToken}
+              onApiError={handleApiError}
+              onNavigate={setActiveTab}
+            />
           )}
           {activeTab === "sale" && (
             <SalePage mainProducts={mainProducts} refreshProducts={refreshProducts} onApiError={handleApiError} token={authToken} role={userRole} />
@@ -248,6 +255,9 @@ function App() {
           )}
           {activeTab === "history" && <HistoryPage onApiError={handleApiError} token={authToken} role={userRole} />}
           {activeTab === "debts" && <DebtsPage onApiError={handleApiError} token={authToken} role={userRole} />}
+          {activeTab === "activityLog" && (
+            <ActivityLogPage token={authToken} onApiError={handleApiError} />
+          )}
           {activeTab === "users" && (
             <UsersPage token={authToken} currentUsername={username} onApiError={handleApiError} />
           )}
