@@ -1,8 +1,7 @@
 import { loginUser, logoutUser, getProducts, sendHeartbeat } from "./services/dataService";
-import { LogOut, Sun, Moon } from "lucide-react";
 import { ROLE_LABELS, ROLE_COLORS, getVisibleTabIds } from "./utils/roles";
 import { useState, useEffect, useCallback } from "react";
-import TabBar from "./components/TabBar";
+import MobileNav from "./components/MobileNav";
 import TopNav from "./components/TopNav";
 import LoginPage from "./pages/LoginPage";
 import SalePage from "./pages/SalePage";
@@ -214,31 +213,21 @@ function App() {
         onToggleTheme={() => setThemeMode((m) => (m === "dark" ? "light" : "dark"))}
       />
 
+      <MobileNav
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        role={userRole}
+        username={username}
+        roleLabel={roleLabel}
+        roleColor={roleColor}
+        onLogout={handleLogout}
+        themeMode={themeMode}
+        onToggleTheme={() => setThemeMode((m) => (m === "dark" ? "light" : "dark"))}
+        pageTitle={PAGE_TITLES[activeTab]}
+      />
+
       <div className="app-shell">
-
-        <div className="mobile-nav-wrapper">
-          <TabBar activeTab={activeTab} onChange={setActiveTab} role={userRole} />
-        </div>
-        <header className="mobile-header">
-          <h1 style={{ fontSize: 18, fontWeight: 700 }}>{PAGE_TITLES[activeTab]}</h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button
-            className="theme-toggle"
-            onClick={themeMode === "dark" ? () => setThemeMode("light") : () => setThemeMode("dark")}
-            title={themeMode === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
-          >
-            {themeMode === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-            <span style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: roleColor.bg, color: roleColor.text, whiteSpace: "nowrap" }}>
-              {username} {roleLabel}
-            </span>
-            <button onClick={handleLogout} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 500, cursor: "pointer", color: "#ef4444", whiteSpace: "nowrap" }}>
-              خروج
-            </button>
-          </div>
-        </header>
-
-        <main style={{ paddingBottom: 90 }}>
+        <main style={{ paddingBottom: 32 }}>
           {activeTab === "dashboard" && (
             <DashboardPage
               mainProducts={mainProducts}
