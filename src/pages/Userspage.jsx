@@ -227,14 +227,14 @@ export default function UsersPage({ token, currentUsername, onApiError }) {
       )}
 
       <div className="debts-stats-row">
-        <div className="stat-card success stat-card-highlight" style={{ textAlign: "center" }}>
+        <div className="stat-card success stat-card-highlight stat-card-side-accent" style={{ textAlign: "center" }}>
           <div className="stat-label" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             <span className={`presence-dot ${onlineCount > 0 ? "online" : ""}`} />
             أونلاين الآن
           </div>
           <div className="stat-value">{onlineCount}</div>
         </div>
-        <div className="stat-card primary stat-card-highlight" style={{ textAlign: "center" }}>
+        <div className="stat-card primary stat-card-highlight stat-card-side-accent" style={{ textAlign: "center" }}>
           <div className="stat-label">
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
               <UsersIcon size={13} /> توزيع الأدوار

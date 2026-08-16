@@ -844,6 +844,7 @@ textarea {
   font-weight: 600;
   padding: 9px 18px;
   border-radius: var(--radius-pill);
+  white-space: nowrap;
 }
 
 .top-nav-link.active {

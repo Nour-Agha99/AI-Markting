@@ -14,7 +14,23 @@ const PAYMENT_TIMING = [
   { id: "debt", label: "دين / لاحقاً" },
 ];
 
-export default function SalePage({ token, mainProducts }) {
+function ProductCardSkeleton() {
+  return (
+    <div className="card" style={{ background: "var(--bg-card-alt)", padding: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ flex: 1 }}>
+        <div className="skeleton" style={{ width: "60%", height: 14, marginBottom: 8 }} />
+        <div className="skeleton" style={{ width: "42%", height: 11 }} />
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="skeleton" style={{ width: 28, height: 28, borderRadius: "50%" }} />
+        <div className="skeleton" style={{ width: 40, height: 20 }} />
+        <div className="skeleton" style={{ width: 28, height: 28, borderRadius: "50%" }} />
+      </div>
+    </div>
+  );
+}
+
+export default function SalePage({ token, mainProducts, productsLoading, refreshProducts }) {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({});
   const [cartMode, setCartMode] = useState({});
@@ -78,7 +94,7 @@ export default function SalePage({ token, mainProducts }) {
     setNameError(false);
     setConfirming(true);
     try {
-      
+
       await recordSale({
         customerName: customerName.trim() || null,
         isDebt,
@@ -175,17 +191,15 @@ export default function SalePage({ token, mainProducts }) {
           {/* طريقة الدفع */}
           {!isDebt && (
             <div className="card">
-              <label style={{ color: "var(--text-secondary)", fontSize: 13, display: "block", marginBottom: 12 }}>طريقة الدفع</label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {PAYMENT_METHODS.map((m) => {
-                  const Icon = m.icon;
-                  const active = payment === m.id;
-                  return (
-                    <button key={m.id} onClick={() => setPayment(m.id)} className="pill"
-                      style={{ justifyContent: "center", background: active ? "var(--color-primary-soft)" : "var(--bg-pill)", border: active ? "1px solid var(--color-primary)" : "1px solid var(--border-subtle)", color: active ? "var(--color-primary)" : "var(--text-primary)", padding: "12px 10px" }}>
-                      <Icon size={16} />{m.label}
-                    </button>
-                  );
+              <div className="section-header">
+                <span className="section-title">اختر المنتجات</span>
+                <span className="section-count">{products.length} منتج</span>
+              </div>
+              <div className="product-list">
+                {productsLoading && products.length === 0 &&
+                  Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+
+                {(!productsLoading || products.length > 0) && products.map((p) => {
                 })}
               </div>
             </div>

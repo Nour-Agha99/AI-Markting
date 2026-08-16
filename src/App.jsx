@@ -25,6 +25,10 @@ const PAGE_TITLES = {
 const SESSION_KEY = "auth_session";
 const THEME_KEY = "theme_mode";
 
+function defaultTabForRole(role) {
+  return role === "owner" ? "dashboard" : "sale";
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState("sale");
   const [authToken, setAuthToken] = useState(null);
@@ -32,6 +36,7 @@ function App() {
   const [username, setUsername] = useState(null);
   const [hydrated, setHydrated] = useState(false);
   const [mainProducts, setMainProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [sessionNotice, setSessionNotice] = useState("");
   const [productsError, setProductsError] = useState("");
   const [productsErrorLeaving, setProductsErrorLeaving] = useState(false);
@@ -62,7 +67,7 @@ function App() {
     if (!userRole) return;
     const visible = getVisibleTabIds(userRole);
     if (!visible.includes(activeTab)) {
-      setActiveTab("sale");
+      setActiveTab(defaultTabForRole(userRole));
     }
   }, [userRole, activeTab]);
 
@@ -81,31 +86,51 @@ function App() {
 
   useEffect(() => {
     async function restoreSession() {
+      let saved;
       try {
-        const saved = sessionStorage.getItem(SESSION_KEY);
-        if (saved) {
-          const { token, role, username: savedUsername } = JSON.parse(saved);
-          if (token) {
-            setAuthToken(token);
-            setUserRole(role);
-            setUsername(savedUsername);
+        saved = sessionStorage.getItem(SESSION_KEY);
+      } catch {
+        saved = null;
+      }
 
-            try {
-              const products = await getProducts(token);
-              setMainProducts(products);
-            } catch (err) {
-              if (err?.code === "SESSION_EXPIRED") {
-                handleLogout();
-              } else {
-                setProductsError(err.message || "ما قدرنا نجيب المنتجات، حاول تحدّث الصفحة.");
-              }
-            }
-          }
-        }
+      if (!saved) {
+        setHydrated(true);
+        return;
+      }
+
+      let parsed;
+      try {
+        parsed = JSON.parse(saved);
       } catch {
         sessionStorage.removeItem(SESSION_KEY);
-      } finally {
         setHydrated(true);
+        return;
+      }
+
+      const { token, role, username: savedUsername } = parsed;
+      if (!token) {
+        setHydrated(true);
+        return;
+      }
+
+      setAuthToken(token);
+      setUserRole(role);
+      setUsername(savedUsername);
+      setActiveTab(defaultTabForRole(role));
+      setHydrated(true);
+      setProductsLoading(true);
+
+      try {
+        const products = await getProducts(token);
+        setMainProducts(products);
+      } catch (err) {
+        if (err?.code === "SESSION_EXPIRED") {
+          handleLogout();
+        } else {
+          setProductsError(err.message || "ما قدرنا نجيب المنتجات، حاول تحدّث الصفحة.");
+        }
+      } finally {
+        setProductsLoading(false);
       }
     }
 
@@ -141,6 +166,7 @@ function App() {
     setAuthToken(data.token);
     setUserRole(data.role);
     setUsername(data.username);
+    setActiveTab(defaultTabForRole(data.role));
     setSessionNotice("");
     setProductsError(data.productsWarning || "");
 
@@ -237,10 +263,24 @@ function App() {
             />
           )}
           {activeTab === "sale" && (
-            <SalePage mainProducts={mainProducts} refreshProducts={refreshProducts} onApiError={handleApiError} token={authToken} role={userRole} />
+            <SalePage
+              mainProducts={mainProducts}
+              productsLoading={productsLoading}
+              refreshProducts={refreshProducts}
+              onApiError={handleApiError}
+              token={authToken}
+              role={userRole}
+            />
           )}
           {activeTab === "products" && (
-            <ProductsPage mainProducts={mainProducts} refreshProducts={refreshProducts} onApiError={handleApiError} token={authToken} role={userRole} />
+            <ProductsPage
+              mainProducts={mainProducts}
+              productsLoading={productsLoading}
+              refreshProducts={refreshProducts}
+              onApiError={handleApiError}
+              token={authToken}
+              role={userRole}
+            />
           )}
           {activeTab === "history" && <HistoryPage onApiError={handleApiError} token={authToken} role={userRole} />}
           {activeTab === "debts" && <DebtsPage onApiError={handleApiError} token={authToken} role={userRole} />}
