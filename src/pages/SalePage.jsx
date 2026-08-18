@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Banknote, CreditCard, Smartphone, Wallet, Check, Minus, Plus, X, ChevronDown } from "lucide-react";
-import { getProducts, recordSale } from "../services/dataService";
+import { recordSale } from "../services/dataService";
 
 const PAYMENT_METHODS = [
   { id: "CASH", label: "كاش", icon: Banknote },
@@ -30,8 +30,7 @@ function ProductCardSkeleton() {
   );
 }
 
-export default function SalePage({ token, mainProducts, productsLoading, refreshProducts }) {
-  const [products, setProducts] = useState([]);
+export default function SalePage({ token, mainProducts, productsLoading, refreshProducts, onApiError, role }) {
   const [cart, setCart] = useState({});
   const [cartMode, setCartMode] = useState({});
   const [customerName, setCustomerName] = useState("");
@@ -46,21 +45,17 @@ export default function SalePage({ token, mainProducts, productsLoading, refresh
 
   const isDebt = paymentTiming === "debt";
 
-  useEffect(() => {
-    setProducts(mainProducts || []);
-  }, [token]);
-
   const cartItems = Object.entries(cart)
     .filter(([, qty]) => qty > 0)
     .map(([productId, qty]) => {
-      const product = products.find((p) => p.id === productId);
+      const product = mainProducts.find((p) => p.id === productId);
       return { productId, qty, product };
     });
 
   const total = cartItems.reduce((sum, item) => sum + item.qty * (item.product?.sellPrice || 0), 0);
 
   function adjustQty(productId, delta, unit) {
-    const product = products.find((p) => p.id === productId);
+    const product = mainProducts.find((p) => p.id === productId);
     const maxQty = product?.quantity ?? Infinity;
 
     setCart((prev) => {
@@ -75,7 +70,7 @@ export default function SalePage({ token, mainProducts, productsLoading, refresh
   }
 
   function handleKgInput(productId, value, sellPrice, mode) {
-    const product = products.find((p) => p.id === productId);
+    const product = mainProducts.find((p) => p.id === productId);
     const maxQty = product?.quantity ?? Infinity;
 
     const val = parseFloat(value) || 0;
@@ -94,7 +89,6 @@ export default function SalePage({ token, mainProducts, productsLoading, refresh
     setNameError(false);
     setConfirming(true);
     try {
-
       await recordSale({
         customerName: customerName.trim() || null,
         isDebt,
@@ -113,12 +107,15 @@ export default function SalePage({ token, mainProducts, productsLoading, refresh
       setCustomerName("");
       setNotes("");
       setPaymentTiming("now");
-      const fresh = await getProducts(token);
-      setProducts(fresh);
+      await refreshProducts();
       setTimeout(() => setSuccessMsg(""), 2500);
     } catch (err) {
-      setErrorMsg(err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
-      setTimeout(() => setErrorMsg(""), 3000);
+      if (err?.code !== "SESSION_EXPIRED") {
+        setErrorMsg(err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
+        setTimeout(() => setErrorMsg(""), 3000);
+      } else {
+        onApiError?.(err);
+      }
     } finally {
       setConfirming(false);
     }
@@ -193,13 +190,13 @@ export default function SalePage({ token, mainProducts, productsLoading, refresh
             <div className="card">
               <div className="section-header">
                 <span className="section-title">اختر المنتجات</span>
-                <span className="section-count">{products.length} منتج</span>
+                <span className="section-count">{mainProducts.length} منتج</span>
               </div>
               <div className="product-list">
-                {productsLoading && products.length === 0 &&
+                {productsLoading && mainProducts.length === 0 &&
                   Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)}
 
-                {(!productsLoading || products.length > 0) && products.map((p) => {
+                {(!productsLoading || mainProducts.length > 0) && mainProducts.map((p) => {
                 })}
               </div>
             </div>
@@ -251,10 +248,10 @@ export default function SalePage({ token, mainProducts, productsLoading, refresh
         <div className="card">
           <div className="section-header">
             <span className="section-title">اختر المنتجات</span>
-            <span className="section-count">{products.length} منتج</span>
+            <span className="section-count">{mainProducts.length} منتج</span>
           </div>
           <div className="product-list">
-            {products.map((p) => {
+            {mainProducts.map((p) => {
               const qty = cart[p.id] || 0;
               const mode = cartMode[p.id] || "kg";
               const low = p.quantity <= p.alertThreshold;
