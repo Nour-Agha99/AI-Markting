@@ -1,0 +1,627 @@
+:root {
+  --nv-bar: #0f2f7a;
+}
+:root[data-theme="light"] {
+  --nv-bar: #1646b8;
+}
+
+@media (max-width: 967px) {
+  :root {
+    --bottom-nav-h: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+  :root.nv-kb {
+    --bottom-nav-h: 0px;
+  }
+  .app-shell {
+    padding-bottom: var(--bottom-nav-h);
+  }
+}
+
+.nv-logo {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: var(--color-primary);
+  color: #fff;
+}
+.nv-logo--sm {
+  width: 34px;
+  height: 34px;
+}
+
+.nv-avatar {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 800;
+}
+.nv-avatar--lg {
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
+}
+.nv-avatar--btn {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  font-size: 16px;
+}
+
+.nv-switch {
+  margin-inline-start: auto;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-pill);
+  transition: background 0.2s, border-color 0.2s;
+}
+.nv-switch::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.2s, background 0.2s;
+}
+.nv-switch.on {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+.nv-switch.on::before {
+  background: #fff;
+  transform: translateX(-18px);
+}
+
+/* ================= الديسكتوب ================= */
+.nv-top {
+  display: none;
+}
+.nv-m-header,
+.nv-bottom {
+  display: none;
+}
+@media (min-width: 968px) {
+  .nv-top {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--nv-bar);
+    box-shadow: 0 6px 24px rgba(8, 20, 70, 0.28);
+  }
+}
+.nv-top-inner {
+  max-width: 1180px;
+  height: 68px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.nv-top .nv-logo {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+.nv-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* التبويبات + الكبسولة المنزلقة */
+.nv-tabs {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nv-ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(5, 15, 60, 0.32);
+}
+.nv-ind.is-ready {
+  transition: transform 0.38s cubic-bezier(0.3, 1.25, 0.5, 1), width 0.38s cubic-bezier(0.3, 1.25, 0.5, 1);
+}
+.nv-tab {
+  position: relative;
+  z-index: 1;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: color 0.2s, background 0.2s;
+}
+.nv-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+.nv-tab.is-active,
+.nv-tab.is-active:hover {
+  color: var(--nv-bar);
+  background: #fff;
+}
+.nv-tabs.has-ind .nv-tab.is-active,
+.nv-tabs.has-ind .nv-tab.is-active:hover {
+  background: transparent;
+}
+.nv-flip {
+  transform: rotate(180deg);
+}
+.nv-more {
+  position: relative;
+  display: flex;
+}
+
+/* الحساب */
+.nv-user {
+  position: relative;
+  margin-inline-start: auto;
+}
+.nv-avatar-btn {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transition: background 0.15s;
+}
+.nv-avatar-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.nv-user-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.25;
+}
+.nv-user-text b {
+  font-size: 13.5px;
+}
+.nv-user-text small {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+/* القوائم */
+.nv-menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  inset-inline-end: 0;
+  z-index: 210;
+  min-width: 250px;
+  padding: 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-elevated);
+  animation: nv-drop 0.18s ease-out;
+}
+.nv-menu--cards {
+  width: 300px;
+  padding: 8px;
+}
+.nv-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: right;
+}
+.nv-card:hover {
+  background: var(--bg-pill);
+}
+.nv-card-ic {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.nv-card-text b {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 800;
+}
+.nv-card-text small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.nv-card.is-active {
+  background: var(--color-primary-soft);
+}
+.nv-card.is-active .nv-card-ic {
+  background: var(--color-primary);
+  color: #fff;
+}
+.nv-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+  padding: 10px 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.nv-menu-head b {
+  display: block;
+  font-size: 15px;
+}
+.nv-menu-head small {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.nv-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14.5px;
+  font-weight: 700;
+  text-align: right;
+}
+.nv-item svg {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+.nv-item:hover {
+  background: var(--bg-pill);
+}
+.nv-item--danger,
+.nv-item--danger svg {
+  color: var(--color-danger);
+}
+.nv-item--danger:hover {
+  background: var(--color-danger-soft);
+}
+@keyframes nv-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 1179px) {
+  .nv-user-text {
+    display: none;
+  }
+  .nv-avatar-btn {
+    padding: 0 6px 0 10px;
+  }
+  .nv-top-inner {
+    gap: 18px;
+    padding: 0 20px;
+  }
+  .nv-tab {
+    padding: 0 13px;
+  }
+}
+
+/* ================= الموبايل ================= */
+@media (max-width: 967px) {
+  .nv-m-header {
+    position: sticky;
+    top: 0;
+    z-index: 150;
+    height: calc(56px + env(safe-area-inset-top, 0px));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: env(safe-area-inset-top, 0px) 14px 0;
+    background: var(--nv-bar);
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(8, 20, 70, 0.25);
+  }
+  .nv-m-header .nv-logo {
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  }
+  .nv-m-title {
+    flex: 1;
+    color: #fff;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 18px;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nv-bottom {
+    position: fixed;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 150;
+    display: flex;
+    justify-content: space-around;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-header);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: transform 0.22s ease;
+  }
+  :root.nv-kb .nv-bottom {
+    transform: translateY(110%);
+  }
+  .nv-b-item {
+    flex: 1;
+    min-width: 0;
+    min-height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .nv-b-ic {
+    width: 54px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .nv-b-label {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .nv-b-item.is-active {
+    color: var(--color-primary);
+  }
+  .nv-b-item.is-active .nv-b-ic {
+    background: var(--color-primary-soft);
+    animation: nv-pop 0.25s ease-out;
+  }
+  .nv-b-item.is-active .nv-b-label {
+    font-weight: 900;
+  }
+  .nv-b-item:active .nv-b-ic {
+    transform: scale(0.92);
+  }
+}
+@keyframes nv-pop {
+  0% {
+    transform: scale(0.85);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ---------- النوافذ السفلية ---------- */
+.nv-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.6);
+}
+.nv-sheet {
+  width: 100%;
+  padding: 8px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+  border: 1px solid var(--border-subtle);
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  background: var(--bg-card);
+  animation: nv-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nv-grab {
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 10px;
+  border-radius: 4px;
+  background: var(--border-subtle);
+}
+.nv-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.nv-sheet-head h2 {
+  font-size: 18px;
+  font-weight: 900;
+}
+.nv-x {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-pill);
+  color: var(--text-secondary);
+}
+.nv-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nv-row {
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 15.5px;
+  font-weight: 800;
+  text-align: right;
+}
+.nv-row:active {
+  background: var(--bg-pill);
+}
+.nv-row-ic {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--bg-pill);
+  color: var(--text-secondary);
+}
+.nv-row-chev {
+  margin-inline-start: auto;
+  color: var(--text-muted);
+}
+.nv-row.is-active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.nv-row.is-active .nv-row-ic {
+  background: var(--color-primary);
+  color: #fff;
+}
+.nv-acc {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  padding: 6px 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.nv-acc b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 17px;
+}
+.nv-acc small {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.nv-logout {
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 15px;
+  font-weight: 800;
+}
+@keyframes nv-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.nv-top button:focus-visible,
+.nv-m-header button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.nv-menu button:focus-visible,
+.nv-bottom button:focus-visible,
+.nv-sheet button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 14px;
+}
+.nv-row-text b {
+  display: block;
+}
+.nv-row-text small {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.nv-row.is-active .nv-row-text small {
+  color: inherit;
+  opacity: 0.8;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nv-menu,
+  .nv-sheet,
+  .nv-b-ic {
+    animation: none;
+  }
+}

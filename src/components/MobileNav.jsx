@@ -1,25 +1,63 @@
-import { useState } from "react";
-import {
-  LayoutDashboard,
-  ShoppingBag,
-  Package,
-  Clock,
-  AlertTriangle,
-  Users,
-  LogOut,
-  Sun,
-  Moon,
-} from "lucide-react";
-import { getVisibleTabIds } from "../utils/roles";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, LogOut, Moon, Sun, Store, X, Ellipsis } from "lucide-react";
+import { getTabsFor, splitForMobile, initialOf } from "./navConfig";
+import "./Nav.css";
 
-const TABS = [
-  { id: "dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
-  { id: "sale", label: "بيع", icon: ShoppingBag },
-  { id: "products", label: "منتجات", icon: Package },
-  { id: "history", label: "السجل", icon: Clock },
-  { id: "debts", label: "الديون", icon: AlertTriangle },
-  { id: "users", label: "المستخدمون", icon: Users },
-];
+// لما الكيبورد يفتح (حقل نص مفعّل) بنخبي الشريط السفلي عشان ما يطلع فوق الكيبورد
+function useHideOnKeyboard() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const isField = (el) =>
+      el && ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) && !["checkbox", "radio", "button", "submit"].includes(el.type);
+    let t;
+    const on = (e) => {
+      clearTimeout(t);
+      if (isField(e.target)) root.classList.add("nv-kb");
+    };
+    const off = () => {
+      clearTimeout(t);
+      t = setTimeout(() => root.classList.remove("nv-kb"), 80);
+    };
+    document.addEventListener("focusin", on);
+    document.addEventListener("focusout", off);
+    return () => {
+      document.removeEventListener("focusin", on);
+      document.removeEventListener("focusout", off);
+      clearTimeout(t);
+      root.classList.remove("nv-kb");
+    };
+  }, []);
+}
+
+function Sheet({ title, onClose, children }) {
+  const closeRef = useRef(null);
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKey = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
+    <div className="nv-overlay" onMouseDown={onClose}>
+      <div className="nv-sheet" role="dialog" aria-modal="true" aria-label={title} onMouseDown={(e) => e.stopPropagation()}>
+        <span className="nv-grab" aria-hidden="true" />
+        <div className="nv-sheet-head">
+          <h2>{title}</h2>
+          <button ref={closeRef} className="nv-x" onClick={onClose} aria-label="إغلاق">
+            <X size={18} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function MobileNav({
   activeTab,
@@ -33,110 +71,120 @@ export default function MobileNav({
   onToggleTheme,
   pageTitle,
 }) {
-  const [open, setOpen] = useState(false);
+  const { bar, more } = splitForMobile(getTabsFor(role));
+  const moreActive = more.some((t) => t.id === activeTab);
+  const dark = themeMode === "dark";
+  const [sheet, setSheet] = useState(null); // "more" | "account" | null
+  const closeSheet = () => setSheet(null);
+  useHideOnKeyboard();
 
-  const visibleIds = getVisibleTabIds(role);
-  const visibleTabs = TABS.filter((tab) => visibleIds.includes(tab.id));
-
-  function handleSelect(tabId) {
-    onChange(tabId);
-    // بنسكّر الدروار بعد لمسة بسيطة، منشان اليوزر يشوف إنه فعلاً دخل عالتاب
-    setTimeout(() => setOpen(false), 200);
-  }
-
-  function handleLogout() {
-    setOpen(false);
-    onLogout();
+  function go(id) {
+    onChange(id);
+    setSheet(null);
   }
 
   return (
     <>
-      <header className="mobile-header">
-        <button
-          className={`hamburger-btn ${open ? "active" : ""}`}
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? "إغلاق القائمة" : "فتح القائمة"}
-          aria-expanded={open}
-        >
-          <span className="burger-lines">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </button>
-
-        <span className="page-title">{pageTitle}</span>
-
-        <span
-          className="user-chip"
-          style={{ background: roleColor.bg, color: roleColor.text }}
-        >
-          <span className="dot" />
-          {username} · {roleLabel}
+      <header className="nv-m-header">
+        <span className="nv-logo nv-logo--sm" aria-hidden="true">
+          <Store size={18} strokeWidth={2.2} />
         </span>
+        <h1 className="nv-m-title">{pageTitle}</h1>
+        <button
+          className="nv-avatar nv-avatar--btn"
+          style={{ background: "#fff", color: "var(--nv-bar)", boxShadow: `0 0 0 2.5px ${roleColor.text}` }}
+          onClick={() => setSheet("account")}
+          aria-haspopup="dialog"
+          aria-label={`حسابي: ${username}`}
+        >
+          {initialOf(username)}
+        </button>
       </header>
 
-      <div
-        className={`backdrop ${open ? "show" : ""}`}
-        onClick={() => setOpen(false)}
-        aria-hidden="true"
-      />
-
-      <div className={`drawer ${open ? "open" : ""}`} role="dialog" aria-modal="true">
-        <div className="drawer-head">
-          <div className="drawer-avatar">🧊</div>
-          <div>
-            <div className="drawer-user-name">{username}</div>
-            <div
-              className="drawer-user-role"
-              style={{ background: roleColor.bg, color: roleColor.text }}
+      <nav className="nv-bottom" aria-label="التنقل الرئيسي">
+        {bar.map((t) => {
+          const Icon = t.icon;
+          const active = activeTab === t.id;
+          return (
+            <button
+              key={t.id}
+              className={`nv-b-item${active ? " is-active" : ""}`}
+              onClick={() => go(t.id)}
+              aria-current={active ? "page" : undefined}
             >
-              {roleLabel}
+              <span className="nv-b-ic">
+                <Icon size={22} strokeWidth={active ? 2.4 : 1.9} />
+              </span>
+              <span className="nv-b-label">{t.short || t.label}</span>
+            </button>
+          );
+        })}
+        {more.length > 0 && (
+          <button
+            className={`nv-b-item${moreActive ? " is-active" : ""}`}
+            onClick={() => setSheet("more")}
+            aria-haspopup="dialog"
+          >
+            <span className="nv-b-ic">
+              <Ellipsis size={22} />
+            </span>
+            <span className="nv-b-label">المزيد</span>
+          </button>
+        )}
+      </nav>
+
+      {sheet === "more" && (
+        <Sheet title="المزيد" onClose={closeSheet}>
+          <div className="nv-rows">
+            {more.map((t) => {
+              const Icon = t.icon;
+              return (
+                <button key={t.id} className={`nv-row${activeTab === t.id ? " is-active" : ""}`} onClick={() => go(t.id)}>
+                  <span className="nv-row-ic">
+                    <Icon size={20} />
+                  </span>
+                  <span className="nv-row-text">
+                    <b>{t.label}</b>
+                    <small>{t.desc}</small>
+                  </span>
+                  <ChevronLeft size={18} className="nv-row-chev" />
+                </button>
+              );
+            })}
+          </div>
+        </Sheet>
+      )}
+
+      {sheet === "account" && (
+        <Sheet title="حسابي" onClose={closeSheet}>
+          <div className="nv-acc">
+            <span className="nv-avatar nv-avatar--lg" style={{ background: roleColor.bg, color: roleColor.text }}>
+              {initialOf(username)}
+            </span>
+            <div>
+              <b>{username}</b>
+              <small style={{ color: roleColor.text, background: roleColor.bg }}>{roleLabel}</small>
             </div>
           </div>
-        </div>
 
-        <nav className="drawer-nav">
-          <div className="nav-label">التنقّل</div>
-
-          {visibleTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                className={`drawer-item ${isActive ? "active" : ""}`}
-                onClick={() => handleSelect(tab.id)}
-              >
-                <span className="icon-wrap">
-                  <Icon size={18} />
-                </span>
-                {tab.label}
-              </button>
-            );
-          })}
-
-          <div className="drawer-divider" />
-
-          <button className="drawer-item danger-item" onClick={handleLogout}>
-            <span className="icon-wrap">
-              <LogOut size={18} />
-            </span>
-            خروج
+          <button className="nv-row" role="switch" aria-checked={dark} onClick={onToggleTheme}>
+            <span className="nv-row-ic">{dark ? <Moon size={20} /> : <Sun size={20} />}</span>
+            الوضع الداكن
+            <span className={`nv-switch${dark ? " on" : ""}`} aria-hidden="true" />
           </button>
-        </nav>
 
-        <div className="drawer-foot">
           <button
-            className="theme-toggle-mini"
-            onClick={onToggleTheme}
-            title={themeMode === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
+            className="nv-logout"
+            onClick={() => {
+              closeSheet();
+              onLogout();
+            }}
           >
-            {themeMode === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            <LogOut size={18} />
+            تسجيل الخروج
           </button>
-          <span className="brand-mini">🧊 المتجر الذكي</span>
-        </div>
-      </div>
+        </Sheet>
+      )}
     </>
   );
 }

@@ -1,7 +1,5 @@
 import { ENDPOINTS } from "./config";
 
-// ---------- Helper موحّد لمعالجة الأخطاء ----------
-
 function sessionExpiredError() {
   const err = new Error("انتهت صلاحية الجلسة، سجل دخول مرة ثانية.");
   err.code = "SESSION_EXPIRED";
@@ -42,8 +40,6 @@ async function apiRequest(url, { method = "GET", token, body } = {}) {
     }
   }
 
-  // جلسة منتهية أو حساب معطّل بس - مش أي 401/403 بشكل عام
-  // (مثلاً INSUFFICIENT_ROLE هو 403 بس مش معناها انتهت الجلسة)
   const authCode = data && typeof data === "object" ? data.code : null;
   if (authCode === "INVALID_TOKEN" || authCode === "ACCOUNT_DISABLED") {
     throw sessionExpiredError();

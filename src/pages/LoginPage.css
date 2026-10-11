@@ -1,0 +1,584 @@
+.lg-page {
+  --lg-panel: #0f2f7a;
+  --lg-paper: #fbfaf6;
+  --lg-ink: #1b1d22;
+  --lg-muted: #6b6e76;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+}
+
+:root[data-theme="light"] .lg-page {
+  --lg-panel: #1646b8;
+}
+
+@media (min-width: 968px) {
+  .lg-page {
+    grid-template-columns: minmax(420px, 5fr) minmax(460px, 6fr);
+  }
+}
+
+/* ---------- الشعار ---------- */
+.lg-logo {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ---------- لوحة الهوية ---------- */
+.lg-brand {
+  display: none;
+  flex-direction: column;
+  padding: 44px 56px;
+  background: var(--lg-panel);
+  color: #fff;
+  overflow: hidden;
+}
+
+@media (min-width: 968px) {
+  .lg-brand {
+    display: flex;
+  }
+}
+
+.lg-brand-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.lg-brand .lg-logo {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.lg-brand-main {
+  margin-block: auto;
+  padding-block: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.lg-brand h2 {
+  max-width: 440px;
+  font-size: clamp(30px, 3.2vw, 44px);
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.lg-brand p {
+  max-width: 400px;
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* ---------- الفاتورة ---------- */
+.lg-receipt-wrap {
+  align-self: center;
+  width: 100%;
+  max-width: 290px;
+  transform: rotate(-2deg);
+  filter: drop-shadow(0 22px 28px rgba(0, 0, 0, 0.32));
+  animation: lg-print 1.8s steps(30, end) 0.35s both;
+}
+
+@media (max-height: 720px) {
+  .lg-receipt-wrap {
+    display: none;
+  }
+}
+
+.lg-receipt {
+  position: relative;
+  padding: 22px 20px 20px;
+  background: var(--lg-paper);
+  color: var(--lg-ink);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* حافة الفاتورة المسنّنة */
+.lg-receipt::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 7px;
+  background: conic-gradient(from -45deg at bottom, transparent, var(--lg-paper) 1deg 89deg, transparent 90deg) 50% / 14px 100%;
+}
+
+.lg-r-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.lg-r-sub {
+  margin-top: 2px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--lg-muted);
+}
+
+.lg-r-sep {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1.5px dashed #c8c5ba;
+}
+
+.lg-r-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 700;
+}
+
+.lg-r-note {
+  margin: 1px 0 9px;
+  font-size: 11.5px;
+  color: var(--lg-muted);
+}
+
+.lg-r-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.lg-r-pay {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--lg-muted);
+}
+
+.lg-r-bars {
+  height: 26px;
+  margin-top: 16px;
+  opacity: 0.85;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--lg-ink) 0 2px,
+    transparent 2px 4px,
+    var(--lg-ink) 4px 5px,
+    transparent 5px 9px,
+    var(--lg-ink) 9px 12px,
+    transparent 12px 14px
+  );
+}
+
+.lg-r-stamp {
+  position: absolute;
+  left: 14px;
+  bottom: 74px;
+  padding: 2px 12px;
+  border: 2px solid #1d4ed8;
+  border-radius: 6px;
+  color: #1d4ed8;
+  font-size: 15px;
+  font-weight: 900;
+  opacity: 0.82;
+  transform: rotate(-12deg);
+  animation: lg-stamp 0.3s ease-out 2.3s both;
+}
+
+@keyframes lg-print {
+  from {
+    clip-path: inset(-40px -60px 100% -60px);
+  }
+  to {
+    clip-path: inset(-40px -60px -60px -60px);
+  }
+}
+
+@keyframes lg-stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-12deg) scale(1.7);
+  }
+  to {
+    opacity: 0.82;
+    transform: rotate(-12deg) scale(1);
+  }
+}
+
+/* ---------- جهة النموذج ---------- */
+.lg-form-side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(28px, env(safe-area-inset-top)) 24px max(28px, env(safe-area-inset-bottom));
+}
+
+.lg-theme {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--bg-pill);
+  color: var(--text-secondary);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.lg-theme:hover {
+  color: var(--text-primary);
+  border-color: var(--color-primary);
+}
+
+.lg-form-wrap {
+  width: 100%;
+  max-width: 400px;
+}
+
+.lg-mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 36px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+@media (min-width: 968px) {
+  .lg-mobile-brand {
+    display: none;
+  }
+}
+
+.lg-head h1 {
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.lg-head p {
+  margin-top: 8px;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.lg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 32px;
+}
+
+.lg-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* ---------- الحقول ----------
+   الصفحة دايماً RTL، فبنستخدم left/right الفيزيائية
+   لأنه الحقل نفسه dir="ltr" (اسم مستخدم إنجليزي) */
+.lg-input {
+  position: relative;
+}
+
+.lg-input input {
+  width: 100%;
+  height: 52px;
+  padding: 0 46px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-pill);
+  color: var(--text-primary);
+  font-size: 16px; /* 16px عشان iOS ما يعمل zoom */
+  text-align: right;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lg-input input::placeholder {
+  color: var(--text-muted);
+}
+
+.lg-input input:focus {
+  border-color: var(--color-primary);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 4px var(--color-primary-soft);
+}
+
+.lg-input input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.lg-input input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 4px var(--color-danger-soft);
+}
+
+.lg-input input:-webkit-autofill {
+  -webkit-text-fill-color: var(--text-primary);
+  caret-color: var(--text-primary);
+  box-shadow: 0 0 0 100px var(--bg-pill) inset;
+}
+
+.lg-input-icon {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.lg-input:focus-within .lg-input-icon {
+  color: var(--color-primary);
+}
+
+.lg-eye {
+  position: absolute;
+  top: 50%;
+  left: 6px;
+  width: 40px;
+  height: 40px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.lg-eye:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-alt);
+}
+
+.lg-caps {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+/* ---------- تذكّر اسم المستخدم ---------- */
+.lg-check {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.lg-check input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.lg-check-box {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-pill);
+  color: #fff;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.lg-check-box svg {
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.lg-check input:checked + .lg-check-box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.lg-check input:checked + .lg-check-box svg {
+  opacity: 1;
+  transform: none;
+}
+
+.lg-check input:focus-visible + .lg-check-box {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ---------- رسالة الخطأ ---------- */
+.lg-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  animation: lg-alert-in 0.22s ease-out;
+}
+
+.lg-alert svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.lg-alert--danger {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.lg-alert--warning {
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.lg-alert--neutral {
+  color: var(--text-secondary);
+  background: var(--bg-pill);
+  border-color: var(--border-subtle);
+}
+
+@keyframes lg-alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- زر الدخول ---------- */
+.lg-submit {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  font-size: 16px;
+  font-weight: 800;
+  transition: background 0.2s ease, transform 0.1s ease, opacity 0.2s ease;
+}
+
+.lg-submit:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.lg-submit:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.lg-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.lg-submit:focus-visible,
+.lg-eye:focus-visible,
+.lg-theme:focus-visible,
+.lg-foot a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.lg-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: lg-spin 0.7s linear infinite;
+}
+
+@keyframes lg-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- التذييل ---------- */
+.lg-foot {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.lg-foot a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.lg-secure {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---------- تقليل الحركة ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .lg-receipt-wrap,
+  .lg-r-stamp,
+  .lg-alert {
+    animation: none;
+  }
+
+  .lg-spinner {
+    animation-duration: 1.8s;
+  }
+}

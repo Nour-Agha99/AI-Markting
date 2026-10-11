@@ -1,0 +1,627 @@
+.dg-page {
+  --dg-accent: var(--color-warning);
+  --dg-accent-soft: var(--color-warning-soft);
+  --dg-paper: #fbfaf6;
+  --dg-ink: #1b1d22;
+  --dg-muted: #6b6e76;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+}
+.dg-page[data-ledger="suppliers"] {
+  --dg-accent: var(--color-danger);
+  --dg-accent-soft: var(--color-danger-soft);
+}
+@media (min-width: 968px) {
+  .dg-page {
+    padding: 28px;
+  }
+}
+
+/* ---------- الرأس والتبديل ---------- */
+.dg-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .dg-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.dg-title {
+  display: none;
+}
+@media (min-width: 968px) {
+  .dg-title {
+    display: block;
+  }
+}
+.dg-title h1 {
+  font-size: 26px;
+  font-weight: 900;
+}
+.dg-title p {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.dg-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-pill);
+}
+@media (min-width: 768px) {
+  .dg-tabs {
+    min-width: 340px;
+  }
+}
+.dg-tabs button {
+  height: 42px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 800;
+  transition: background 0.15s, color 0.15s;
+}
+.dg-tabs button[aria-selected="true"] {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25), inset 0 -2px 0 var(--dg-accent);
+}
+
+.dg-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 14px;
+  font-weight: 700;
+}
+.dg-error button {
+  padding: 6px 12px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+}
+
+/* ---------- الملخص ---------- */
+.dg-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+}
+.dg-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-left: 1px solid var(--border-subtle);
+}
+.dg-stat:last-child {
+  border-left: 0;
+}
+.dg-stat--main {
+  grid-column: 1 / -1;
+  border-left: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: inset -4px 0 0 var(--dg-accent);
+}
+.dg-stat span {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.dg-stat b {
+  font-size: 22px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.dg-stat--main b {
+  font-size: 32px;
+  color: var(--dg-accent);
+}
+@media (min-width: 768px) {
+  .dg-stats {
+    grid-template-columns: 1.6fr 1fr 1fr;
+  }
+  .dg-stat--main {
+    grid-column: auto;
+    border-bottom: 0;
+    border-left: 1px solid var(--border-subtle);
+  }
+}
+
+/* ---------- البحث والفلاتر ---------- */
+.dg-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+@media (min-width: 968px) {
+  .dg-toolbar {
+    flex-direction: row;
+    align-items: center;
+  }
+  .dg-search {
+    flex: 1;
+  }
+}
+.dg-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.dg-search svg {
+  position: absolute;
+  right: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.dg-search input {
+  width: 100%;
+  height: 48px;
+  padding: 0 44px 0 16px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 16px;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.dg-search input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-soft);
+}
+.dg-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+}
+.dg-pills button {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.dg-pills button.on {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+.dg-sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: var(--border-subtle);
+}
+
+/* ---------- القائمة ---------- */
+.dg-list {
+  list-style: none;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+}
+@media (min-width: 768px) {
+  .dg-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .dg-list > li:nth-child(odd) {
+    border-left: 1px solid var(--border-subtle);
+  }
+}
+.dg-list > li {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.dg-list > li:last-child {
+  border-bottom: 0;
+}
+@media (min-width: 768px) {
+  .dg-list > li:nth-last-child(2):nth-child(odd) {
+    border-bottom: 0;
+  }
+}
+.dg-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: right;
+  transition: background 0.15s;
+}
+button.dg-row:hover {
+  background: var(--bg-card-alt);
+}
+.dg-row.is-paid {
+  opacity: 0.6;
+}
+.dg-av {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 17px;
+  font-weight: 800;
+}
+.dg-av-0 { background: var(--color-primary-soft); color: var(--color-primary); }
+.dg-av-1 { background: var(--color-success-soft); color: var(--color-success); }
+.dg-av-2 { background: var(--color-warning-soft); color: var(--color-warning); }
+.dg-av-3 { background: var(--color-danger-soft); color: var(--color-danger); }
+.dg-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dg-name {
+  overflow: hidden;
+  font-size: 15.5px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dg-sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dg-count {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.dg-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.dg-chip--ok { background: var(--bg-pill); color: var(--text-secondary); }
+.dg-chip--warn { background: var(--color-warning-soft); color: var(--color-warning); }
+.dg-chip--late { background: var(--color-danger-soft); color: var(--color-danger); }
+.dg-chip--paid { background: var(--color-success-soft); color: var(--color-success); }
+.dg-bar {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg-pill);
+}
+.dg-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-success);
+}
+.dg-amt {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.dg-amt b {
+  font-size: 18px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--dg-accent);
+}
+.is-paid .dg-amt b {
+  color: var(--color-success);
+}
+.dg-amt small {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.dg-chev {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.dg-empty {
+  grid-column: 1 / -1;
+  padding: 36px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* ---------- النافذة: السجل + الدفع ---------- */
+.dg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+@media (min-width: 768px) {
+  .dg-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+}
+.dg-sheet {
+  width: 100%;
+  max-width: 440px;
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 22px 22px 0 0;
+  animation: dg-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (min-width: 768px) {
+  .dg-sheet {
+    padding-bottom: 20px;
+    border-radius: 20px;
+    animation: dg-pop 0.2s ease-out;
+  }
+}
+.dg-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.dg-sheet-head h2 {
+  font-size: 19px;
+  font-weight: 900;
+}
+.dg-x {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-pill);
+  color: var(--text-secondary);
+}
+@keyframes dg-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes dg-pop {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* دفتر الحساب على ورق حراري */
+.dg-paper-wrap {
+  padding-bottom: 7px;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.25));
+}
+.dg-paper {
+  position: relative;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px 16px 14px;
+  background: var(--dg-paper);
+  color: var(--dg-ink);
+  font-variant-numeric: tabular-nums;
+}
+.dg-paper-wrap {
+  position: relative;
+}
+.dg-paper-wrap::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 7px;
+  background: conic-gradient(from -45deg at bottom, transparent, var(--dg-paper) 1deg 89deg, transparent 90deg) 50% / 14px 100%;
+}
+.dg-paper ul {
+  list-style: none;
+}
+.dg-paper li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1.5px dashed #d6d3c8;
+}
+.dg-paper li b {
+  display: block;
+  font-size: 14px;
+}
+.dg-paper li small {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--dg-muted);
+}
+.dg-paper li > span {
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.dg-paper li.purchase > span { color: #b45309; }
+.dg-paper li.payment > span { color: #15803d; }
+.dg-paper-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.dg-pay {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+.dg-pay label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.dg-pay label em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.dg-pay input {
+  width: 100%;
+  height: 52px;
+  padding: 0 14px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-pill);
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  text-align: right;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.dg-pay input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-soft);
+}
+.dg-chips {
+  display: flex;
+  gap: 8px;
+}
+.dg-chips button {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-pill);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+.dg-chips button:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.dg-err {
+  padding: 10px 13px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.dg-confirm {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+}
+.dg-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.dg-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  font-weight: 800;
+}
+
+/* ---------- تنبيه + تحميل + تركيز ---------- */
+.dg-toast {
+  position: fixed;
+  top: calc(76px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  z-index: 500;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  background: var(--color-success);
+  color: #04210f;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-size: 14px;
+  font-weight: 700;
+  transform: translateX(-50%);
+  animation: dg-toast 0.25s ease-out;
+}
+@keyframes dg-toast {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.dg-sk {
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--bg-pill) 25%, var(--bg-card-alt) 37%, var(--bg-pill) 63%);
+  background-size: 400% 100%;
+  animation: dg-shimmer 1.4s ease infinite;
+}
+@keyframes dg-shimmer {
+  from { background-position: 100% 50%; }
+  to { background-position: 0 50%; }
+}
+.dg-page button:focus-visible,
+.dg-page input:focus-visible,
+.dg-sheet button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dg-sheet,
+  .dg-toast,
+  .dg-sk {
+    animation: none;
+  }
+}

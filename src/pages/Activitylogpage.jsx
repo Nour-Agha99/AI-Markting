@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LogIn,
   LogOut,
@@ -16,293 +16,312 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { getActivityLog, getUsers } from "../services/dataService";
+import { ROLE_LABELS } from "../utils/roles";
+import "./ActivityLogPage.css";
 
+const DELETE_META = { label: "حذف منتج", icon: PackageMinus, color: "var(--color-danger)", soft: "var(--color-danger-soft)", risk: true };
 export const ACTION_META = {
   login: { label: "دخول", icon: LogIn, color: "var(--color-success)", soft: "var(--color-success-soft)" },
   logout: { label: "خروج", icon: LogOut, color: "var(--text-secondary)", soft: "var(--bg-pill)" },
   record_sale: { label: "بيع", icon: ShoppingBag, color: "var(--color-primary)", soft: "var(--color-primary-soft)" },
-  record_debt: { label: "بيع كدين", icon: ShoppingBag, color: "var(--color-danger)", soft: "var(--color-danger-soft)" },
+  record_debt: { label: "بيع كدين", icon: ShoppingBag, color: "var(--color-warning)", soft: "var(--color-warning-soft)" },
   pay_debt: { label: "سداد دين", icon: Wallet, color: "var(--color-success)", soft: "var(--color-success-soft)" },
   product_added: { label: "إضافة منتج", icon: PackagePlus, color: "var(--color-success)", soft: "var(--color-success-soft)" },
   product_updated: { label: "تعديل منتج", icon: PackagePlus, color: "var(--color-warning)", soft: "var(--color-warning-soft)" },
-  delete_product: { label: "حذف منتج", icon: PackageMinus, color: "var(--color-danger)", soft: "var(--color-danger-soft)" },
-  user_added: { label: "إضافة مستخدم", icon: UserPlus, color: "var(--color-primary)", soft: "var(--color-primary-soft)" },
-  user_updated: { label: "تعديل مستخدم", icon: UserPlus, color: "var(--color-warning)", soft: "var(--color-warning-soft)" },
-  user_enabled: { label: "تفعيل حساب", icon: UserCheck, color: "var(--color-success)", soft: "var(--color-success-soft)" },
-  user_disabled: { label: "تعطيل حساب", icon: UserX, color: "var(--color-danger)", soft: "var(--color-danger-soft)" },
-  force_logout: { label: "إنهاء جلسة", icon: Unplug, color: "var(--color-warning)", soft: "var(--color-warning-soft)" },
+  delete_product: DELETE_META,
+  "delete:product_status_toggled": DELETE_META, // الاسم اللي بيسجّله ورك فلو الحذف حالياً
+  user_added: { label: "إضافة مستخدم", icon: UserPlus, color: "var(--color-primary)", soft: "var(--color-primary-soft)", risk: true },
+  user_updated: { label: "تعديل مستخدم", icon: UserPlus, color: "var(--color-warning)", soft: "var(--color-warning-soft)", risk: true },
+  user_enabled: { label: "تفعيل حساب", icon: UserCheck, color: "var(--color-success)", soft: "var(--color-success-soft)", risk: true },
+  user_disabled: { label: "تعطيل حساب", icon: UserX, color: "var(--color-danger)", soft: "var(--color-danger-soft)", risk: true },
+  force_logout: { label: "إنهاء جلسة", icon: Unplug, color: "var(--color-warning)", soft: "var(--color-warning-soft)", risk: true },
 };
-
 const DEFAULT_META = { label: "حركة", icon: CheckCircle2, color: "var(--text-secondary)", soft: "var(--bg-pill)" };
-
-export function getActionMeta(action) {
-  return ACTION_META[action] || DEFAULT_META;
-}
+export const getActionMeta = (action) => ACTION_META[action] || DEFAULT_META;
 
 const ACTION_GROUPS = [
   { id: "all", label: "الكل", actions: null },
-  { id: "session", label: "دخول/خروج", actions: ["login", "logout"] },
+  { id: "session", label: "دخول وخروج", actions: ["login", "logout"] },
   { id: "sales", label: "مبيعات وديون", actions: ["record_sale", "record_debt", "pay_debt"] },
-  { id: "products", label: "منتجات", actions: ["product_added", "product_updated", "delete_product"] },
+  { id: "products", label: "منتجات", actions: ["product_added", "product_updated", "delete_product", "delete:product_status_toggled"] },
   { id: "users", label: "مستخدمين", actions: ["user_added", "user_updated", "user_enabled", "user_disabled", "force_logout"] },
 ];
 
 const PAGE_SIZE = 30;
+const money = (n) => `₪${Number(n).toFixed(2)}`;
+const timeOf = (d) => (d ? new Date(d).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : "—");
+const dayKey = (d) => new Date(d).toDateString();
 
-function dayLabel(dateStr) {
-  const date = new Date(dateStr);
+function dayLabel(d) {
+  const date = new Date(d);
   const now = new Date();
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-
+  const y = new Date(now);
+  y.setDate(now.getDate() - 1);
   if (date.toDateString() === now.toDateString()) return "اليوم";
-  if (date.toDateString() === yesterday.toDateString()) return "امبارح";
+  if (date.toDateString() === y.toDateString()) return "امبارح";
   return date.toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" });
 }
 
-function dayKey(dateStr) {
-  return new Date(dateStr).toDateString();
+function detailParts(action, details) {
+  if (!details) return [];
+  let d = details;
+  try {
+    d = typeof details === "string" ? JSON.parse(details) : details;
+  } catch {
+    return [];
+  }
+  const out = [];
+  switch (action) {
+    case "record_sale":
+    case "record_debt":
+      if (d.customerName) out.push(`الزبون: ${d.customerName}`);
+      if (d.total != null) out.push(`الإجمالي ${money(d.total)}`);
+      if (d.itemsCount != null) out.push(`${d.itemsCount} صنف`);
+      break;
+    case "pay_debt":
+      if (d.customerName) out.push(`الزبون: ${d.customerName}`);
+      if (d.amount != null) out.push(`دفع ${money(d.amount)}`);
+      if (d.remaining != null) out.push(`المتبقي ${money(d.remaining)}`);
+      break;
+    case "product_added":
+    case "product_updated":
+    case "delete_product":
+    case "delete:product_status_toggled":
+      if (d.name) out.push(`المنتج: ${d.name}`);
+      if (d.productDetails?.sellPrice != null && action !== "delete_product") out.push(`سعر البيع ${money(d.productDetails.sellPrice)}`);
+      break;
+    case "user_added":
+    case "user_updated":
+      if (d.username) out.push(`المستخدم: ${d.username}`);
+      if (d.role) out.push(`الدور: ${ROLE_LABELS[d.role] || d.role}`);
+      break;
+    case "user_enabled":
+    case "user_disabled":
+      if (d.targetUsername || d.username) out.push(`المستخدم: ${d.targetUsername || d.username}`);
+      break;
+    case "force_logout":
+      if (d.closedSessions != null) out.push(`تم إنهاء ${d.closedSessions} جلسة`);
+      break;
+    default:
+  }
+  return out;
 }
 
-function formatDetails(action, details) {
-  if (!details) return null;
-  try {
-    const d = typeof details === "string" ? JSON.parse(details) : details;
-    if (action === "record_sale" || action === "record_debt") {
-      const parts = [];
-      if (d.customerName) parts.push(`الزبون: ${d.customerName}`);
-      if (d.total != null) parts.push(`الإجمالي: ₪${Number(d.total).toFixed(2)}`);
-      if (d.itemsCount != null) parts.push(`${d.itemsCount} صنف`);
-      return parts.join(" · ");
-    }
-    if (action === "pay_debt") {
-      const parts = [];
-      if (d.customerName) parts.push(`الزبون: ${d.customerName}`);
-      if (d.amount != null) parts.push(`المبلغ: ₪${Number(d.amount).toFixed(2)}`);
-      if (d.remaining != null) parts.push(`المتبقي: ₪${Number(d.remaining).toFixed(2)}`);
-      return parts.join(" · ");
-    }
-    if (action === "product_added" || action === "product_updated" || action === "delete_product") {
-      return d.name ? `المنتج: ${d.name}` : null;
-    }
-    if (action === "user_added" || action === "user_updated" || action === "user_enabled" || action === "user_disabled") {
-      return d.username ? `المستخدم: ${d.username}` : null;
-    }
-    if (action === "force_logout") {
-      return d.closedSessions != null ? `تم إنهاء ${d.closedSessions} جلسة` : null;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
+const hue = (name) => {
+  let h = 0;
+  for (const c of name || "؟") h = c.charCodeAt(0) + ((h << 5) - h);
+  return Math.abs(h) % 4;
+};
 
 export default function ActivityLogPage({ token, onApiError }) {
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [error, setError] = useState("");
   const [hasMore, setHasMore] = useState(false);
   const [nextOffset, setNextOffset] = useState(0);
-
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectedGroup, setSelectedGroup] = useState("all");
+  const [userId, setUserId] = useState("");
+  const [group, setGroup] = useState("all");
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [q, setQ] = useState("");
+
+  const apiErr = useRef(onApiError);
+  const countRef = useRef(0);
+  useEffect(() => {
+    apiErr.current = onApiError;
+    countRef.current = items.length;
+  });
+
+  const actions = useMemo(() => ACTION_GROUPS.find((g) => g.id === group)?.actions || null, [group]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setQ(search.trim().toLowerCase()), 300);
+    return () => clearTimeout(t);
   }, [search]);
 
   useEffect(() => {
     getUsers(token).then(setUsers).catch(() => {});
   }, [token]);
 
-  const activeActions = useMemo(
-    () => ACTION_GROUPS.find((g) => g.id === selectedGroup)?.actions || null,
-    [selectedGroup]
-  );
-
   const load = useCallback(
-    async (offset = 0, append = false) => {
+    async (offset = 0, append = false, silent = false) => {
       if (append) setLoadingMore(true);
-      else setLoading(true);
-      setErrorMsg("");
+      else if (!silent) setLoading(true);
+      if (!silent) setError("");
       try {
-        const data = await getActivityLog(
-          { limit: PAGE_SIZE, offset, userId: selectedUserId || null, actions: activeActions },
-          token
-        );
+        const data = await getActivityLog({ limit: PAGE_SIZE, offset, userId: userId || null, actions }, token);
         setItems((prev) => (append ? [...prev, ...data.items] : data.items));
         setHasMore(data.hasMore);
         setNextOffset(data.nextOffset);
       } catch (err) {
-        if (err?.code !== "SESSION_EXPIRED") {
-          setErrorMsg(err.message || "ما قدرنا نجيب سجل النشاطات.");
-        } else {
-          onApiError?.(err);
-        }
+        if (err?.code === "SESSION_EXPIRED") {
+          try {
+            apiErr.current?.(err);
+          } catch {
+            /* انتهت الجلسة */
+          }
+        } else if (!silent) setError(err.message || "ما قدرنا نجيب سجل النشاطات.");
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    [token, selectedUserId, activeActions, onApiError]
+    [token, userId, actions]
   );
 
   useEffect(() => {
     load(0, false);
-  }, [selectedUserId, selectedGroup, token]);
+  }, [load]);
 
-  const filteredItems = useMemo(() => {
-    const q = debouncedSearch.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(
-      (it) =>
-        (it.userName || "").toLowerCase().includes(q) ||
-        (it.username || "").toLowerCase().includes(q)
-    );
-  }, [items, debouncedSearch]);
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!document.hidden && countRef.current <= PAGE_SIZE) load(0, false, true);
+    }, 30000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  const rows = useMemo(
+    () =>
+      items
+        .map((it) => ({ it, meta: getActionMeta(it.action), parts: detailParts(it.action, it.details) }))
+        .filter(({ it, parts }) => {
+          if (!q) return true;
+          return `${it.userName || ""} ${it.username || ""} ${parts.join(" ")}`.toLowerCase().includes(q);
+        }),
+    [items, q]
+  );
 
   const groups = useMemo(() => {
     const map = new Map();
-    for (const it of filteredItems) {
-      const key = dayKey(it.date);
-      if (!map.has(key)) map.set(key, { label: dayLabel(it.date), items: [] });
-      map.get(key).items.push(it);
+    for (const r of rows) {
+      const k = dayKey(r.it.date);
+      if (!map.has(k)) map.set(k, { key: k, label: dayLabel(r.it.date), rows: [] });
+      map.get(k).rows.push(r);
     }
-    return Array.from(map.values());
-  }, [filteredItems]);
+    return [...map.values()];
+  }, [rows]);
 
   return (
-    <div className="page-container">
-      <div className="section-header">
-        <span className="section-title">سجل النشاطات</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span className="section-count">{filteredItems.length} حركة</span>
-          <button onClick={() => load(0, false)} disabled={loading} className="icon-btn-refresh">
-            <RefreshCw size={16} className={loading ? "spin" : ""} />
+    <div className="ac-page">
+      <header className="ac-head">
+        <div className="ac-title">
+          <h1>سجل النشاطات</h1>
+          <p>
+            <i className="ac-live" />
+            كل حركة بالنظام، بتتحدّث لحالها كل 30 ثانية.
+          </p>
+        </div>
+        <div className="ac-head-end">
+          <span className="ac-count">{rows.length} حركة</span>
+          <button className="ac-refresh" onClick={() => load(0, false)} disabled={loading} aria-label="تحديث">
+            <RefreshCw size={18} className={loading ? "ac-spin" : ""} />
           </button>
         </div>
-      </div>
+      </header>
 
-      {errorMsg && (
-        <div className="card" style={{ background: "var(--color-danger-soft)", color: "var(--color-danger)", textAlign: "center", fontWeight: 600 }}>
-          {errorMsg}
+      <div className="ac-toolbar">
+        <div className="ac-search">
+          <Search size={18} aria-hidden="true" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ابحث بالتفاصيل: اسم زبون، منتج، مستخدم..."
+            aria-label="بحث بالنشاطات"
+          />
         </div>
-      )}
 
-      <div className="card" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div className="search-box">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث باسم المستخدم..."
-            />
-            <Search size={17} className="search-box-icon" />
-          </div>
-
-          <select
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
-            style={{
-              width: "100%",
-              background: "var(--bg-pill)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: "var(--radius-sm)",
-              padding: "10px 12px",
-              color: "var(--text-primary)",
-              fontSize: 14,
-              outline: "none",
-            }}
-          >
-            <option value="">كل المستخدمين</option>
+        {users.length > 0 && (
+          <div className="ac-chips" role="group" aria-label="المستخدم">
+            <button className={!userId ? "on" : ""} onClick={() => setUserId("")}>
+              الكل
+            </button>
             {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.fullName} (@{u.username})
-              </option>
+              <button key={u.id} className={userId === u.id ? "on" : ""} onClick={() => setUserId(userId === u.id ? "" : u.id)}>
+                <span className={`ac-mini ac-mini-${hue(u.fullName)}`}>{(u.fullName || "؟").trim().charAt(0)}</span>
+                {(u.fullName || u.username).split(" ")[0]}
+              </button>
             ))}
-          </select>
-        </div>
+          </div>
+        )}
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="ac-pills" role="group" aria-label="نوع الحركة">
           {ACTION_GROUPS.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setSelectedGroup(g.id)}
-              className={`pill filter-btn ${selectedGroup === g.id ? "active" : ""}`}
-              style={selectedGroup !== g.id ? { background: "var(--bg-pill)", border: "1px solid var(--border-subtle)" } : undefined}
-            >
+            <button key={g.id} className={group === g.id ? "on" : ""} onClick={() => setGroup(g.id)}>
               {g.label}
             </button>
           ))}
         </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {loading && (
-          <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>
-            جاري التحميل...
-          </div>
-        )}
-        {!loading && groups.length === 0 && (
-          <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>
-            ما في حركات تطابق هاد الفلتر.
-          </div>
-        )}
+      {error && (
+        <div className="ac-error" role="alert">
+          {error}
+          <button onClick={() => load(0, false)}>إعادة المحاولة</button>
+        </div>
+      )}
 
-        {groups.map((group) => (
-          <div key={group.label} className="card" style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "12px 16px", color: "var(--text-secondary)", fontSize: 13, borderBottom: "1px solid var(--border-subtle)" }}>
-              {group.label}
-            </div>
+      {loading && items.length === 0 && (
+        <ul className="ac-tl">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <li key={i} className="ac-item">
+              <span className="ac-sk" style={{ width: 34, height: 34, borderRadius: "50%" }} />
+              <span className="ac-body">
+                <span className="ac-sk" style={{ width: "50%", height: 14 }} />
+                <span className="ac-sk" style={{ width: "70%", height: 11 }} />
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
 
-            {group.items.map((it) => {
-              const meta = getActionMeta(it.action);
+      {!loading && !error && groups.length === 0 && <div className="ac-empty">ما في حركات بتطابق الفلتر.</div>}
+
+      {groups.map((g) => (
+        <section key={g.key} className="ac-day-group">
+          <h3 className="ac-day">
+            <span>{g.label}</span>
+            <small>{g.rows.length} حركة</small>
+          </h3>
+          <ul className="ac-tl">
+            {g.rows.map(({ it, meta, parts }) => {
               const Icon = meta.icon;
-              const detailText = formatDetails(it.action, it.details);
               return (
-                <div key={it.id} className="history-row">
-                  <span className="history-badge" style={{ background: meta.soft, color: meta.color, display: "inline-flex", alignItems: "center", gap: 5 }}>
-                    <Icon size={13} />
-                    {meta.label}
+                <li key={it.id} className={`ac-item${meta.risk ? " is-risk" : ""}`}>
+                  <span className="ac-node" style={{ "--c": meta.color, "--s": meta.soft }}>
+                    <Icon size={16} />
                   </span>
-
-                  <div className="history-content">
-                    <div className="history-main">
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>
-                        {it.userName || "غير معروف"}
-                        <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}> @{it.username}</span>
+                  <div className="ac-body">
+                    <div className="ac-line">
+                      <b>{it.userName || "غير معروف"}</b>
+                      <span className="ac-act" style={{ color: meta.color }}>
+                        {meta.label}
+                      </span>
+                      {meta.risk && <em className="ac-risk">حساس</em>}
+                    </div>
+                    {parts.length > 0 && (
+                      <div className="ac-det">
+                        {parts.map((p) => (
+                          <span key={p}>{p}</span>
+                        ))}
                       </div>
-                      {detailText && (
-                        <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 4 }}>{detailText}</div>
-                      )}
-                    </div>
-                    <div className="history-time">
-                      {it.date
-                        ? new Date(it.date).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })
-                        : "—"}
-                    </div>
+                    )}
                   </div>
-                </div>
+                  <time>{timeOf(it.date)}</time>
+                </li>
               );
             })}
-          </div>
-        ))}
+          </ul>
+        </section>
+      ))}
 
-        {!loading && hasMore && !debouncedSearch && (
-          <div className="load-more-wrap">
-            <button onClick={() => load(nextOffset, true)} disabled={loadingMore} className="load-more-btn">
-              <ChevronDown size={16} />
-              {loadingMore ? "جاري التحميل..." : "عرض المزيد"}
-            </button>
-          </div>
-        )}
-      </div>
+      {!loading && hasMore && !q && (
+        <button className="ac-more" onClick={() => load(nextOffset, true)} disabled={loadingMore}>
+          <ChevronDown size={16} />
+          {loadingMore ? "جاري التحميل..." : "عرض المزيد"}
+        </button>
+      )}
     </div>
   );
 }

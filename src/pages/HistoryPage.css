@@ -1,0 +1,460 @@
+.hs-page {
+  --hs-paper: #fbfaf6;
+  --hs-ink: #1b1d22;
+  --hs-muted: #6b6e76;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+}
+@media (min-width: 968px) {
+  .hs-page {
+    padding: 28px;
+  }
+}
+
+/* ---------- البحث والفلاتر ---------- */
+.hs-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hs-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.hs-search > svg {
+  position: absolute;
+  right: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.hs-search input {
+  width: 100%;
+  height: 48px;
+  padding: 0 44px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 16px;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.hs-search input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-soft);
+}
+.hs-search-x {
+  position: absolute;
+  left: 8px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-pill);
+  color: var(--text-secondary);
+}
+.hs-filters {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.hs-seg {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--bg-pill);
+}
+.hs-seg button {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.hs-seg button.on {
+  background: var(--color-primary);
+  color: #fff;
+}
+@media (min-width: 968px) {
+  .hs-toolbar {
+    flex-direction: row;
+    align-items: center;
+  }
+  .hs-search {
+    flex: 1;
+  }
+  .hs-filters {
+    overflow: visible;
+  }
+}
+
+.hs-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 14px;
+  font-weight: 700;
+}
+.hs-error button {
+  padding: 6px 12px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+}
+
+/* ---------- ملخص الفلتر ---------- */
+.hs-stats {
+  display: grid;
+  grid-template-columns: 0.7fr 1.2fr 1.2fr;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--bg-card);
+}
+.hs-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border-left: 1px solid var(--border-subtle);
+}
+.hs-stats > div:last-child {
+  border-left: 0;
+}
+.hs-stats span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.hs-stats b {
+  font-size: 18px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.hs-stats b.ok {
+  color: var(--color-success);
+}
+.hs-stats small {
+  font-size: 11px;
+  color: var(--color-warning);
+  font-weight: 700;
+}
+@media (min-width: 768px) {
+  .hs-stats b {
+    font-size: 22px;
+  }
+}
+
+/* ---------- عنوان اليوم (ثابت) ---------- */
+.hs-day-group {
+  display: flex;
+  flex-direction: column;
+}
+.hs-day {
+  position: sticky;
+  top: calc(56px + env(safe-area-inset-top, 0px));
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 4px;
+  background: var(--bg-app);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+@media (min-width: 968px) {
+  .hs-day {
+    top: 68px;
+  }
+}
+.hs-day-tot {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.hs-day-tot b {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.hs-day-tot small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ---------- القائمة ---------- */
+.hs-list {
+  list-style: none;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--bg-card);
+}
+.hs-item {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.hs-item:last-child {
+  border-bottom: 0;
+}
+.hs-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: right;
+  transition: background 0.15s;
+}
+button.hs-row:hover {
+  background: var(--bg-card-alt);
+}
+.hs-item.is-open .hs-row {
+  background: var(--bg-card-alt);
+}
+.hs-ic {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.hs-item--debt .hs-ic {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+.hs-item--payment .hs-ic {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.hs-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hs-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+}
+.hs-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+.hs-item--debt .hs-chip {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+.hs-item--payment .hs-chip {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.hs-sub {
+  overflow: hidden;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hs-amt {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.hs-amt b {
+  font-size: 16px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.hs-item--payment .hs-amt b {
+  color: var(--color-success);
+}
+.hs-item--debt .hs-amt b {
+  color: var(--color-warning);
+}
+.hs-amt small {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.hs-chev {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.is-open .hs-chev {
+  transform: rotate(180deg);
+}
+
+/* ---------- تفاصيل (شريط فاتورة) ---------- */
+.hs-detail {
+  padding: 4px 14px 18px;
+  background: var(--bg-card-alt);
+  animation: hs-open 0.2s ease-out;
+}
+.hs-paper {
+  position: relative;
+  padding: 14px 16px 12px;
+  background: var(--hs-paper);
+  color: var(--hs-ink);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+.hs-paper::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 7px;
+  background: conic-gradient(from -45deg at bottom, transparent, var(--hs-paper) 1deg 89deg, transparent 90deg) 50% / 14px 100%;
+}
+.hs-paper ul {
+  list-style: none;
+}
+.hs-paper li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1.5px dashed #d6d3c8;
+  font-weight: 700;
+}
+.hs-paper p {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--hs-muted);
+}
+.hs-paper-total,
+.hs-paper-profit {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-weight: 900;
+}
+.hs-paper-total {
+  font-size: 16px;
+}
+.hs-paper-profit {
+  font-size: 13px;
+  color: #15803d;
+}
+@keyframes hs-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- حالات أخرى ---------- */
+.hs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+}
+.hs-empty button {
+  padding: 8px 16px;
+  border: 1px solid var(--color-primary);
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+.hs-more {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+.hs-more span {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.hs-sk {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--bg-pill) 25%, var(--bg-card-alt) 37%, var(--bg-pill) 63%);
+  background-size: 400% 100%;
+  animation: hs-shimmer 1.4s ease infinite;
+}
+@keyframes hs-shimmer {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
+}
+.hs-page button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-detail,
+  .hs-sk {
+    animation: none;
+  }
+}

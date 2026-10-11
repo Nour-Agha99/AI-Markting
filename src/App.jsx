@@ -1,6 +1,6 @@
+import { useState, useEffect, useCallback } from "react";
 import { loginUser, logoutUser, getProducts, sendHeartbeat } from "./services/dataService";
 import { ROLE_LABELS, ROLE_COLORS, getVisibleTabIds } from "./utils/roles";
-import { useState, useEffect, useCallback } from "react";
 import MobileNav from "./components/MobileNav";
 import TopNav from "./components/TopNav";
 import LoginPage from "./pages/LoginPage";
@@ -9,7 +9,7 @@ import ProductsPage from "./pages/ProductsPage";
 import DebtsPage from "./pages/DebtsPage";
 import HistoryPage from "./pages/HistoryPage";
 import DashboardPage from "./pages/DashboardPage";
-import UsersPage from "./pages/UsersPage";
+import UsersPage from "./pages/Userspage"; 
 import ActivityLogPage from "./pages/ActivityLogPage";
 
 const PAGE_TITLES = {
@@ -41,14 +41,18 @@ function App() {
   const [productsError, setProductsError] = useState("");
   const [productsErrorLeaving, setProductsErrorLeaving] = useState(false);
   const [sessionNoticeLeaving, setSessionNoticeLeaving] = useState(false);
-  const [themeMode, setThemeMode] = useState(
-    () => localStorage.getItem(THEME_KEY) || "dark"
-  );
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem(THEME_KEY) || "dark");
+
+  const toggleTheme = () => setThemeMode((m) => (m === "dark" ? "light" : "dark"));
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", themeMode);
     localStorage.setItem(THEME_KEY, themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [activeTab]);
 
   useEffect(() => {
     if (!productsError) return;
@@ -211,13 +215,24 @@ function App() {
             {sessionNotice}
           </div>
         )}
-        <LoginPage onLogin={handleLogin} />
+        <LoginPage onLogin={handleLogin} themeMode={themeMode} onToggleTheme={toggleTheme} />
       </>
     );
   }
 
   const roleLabel = ROLE_LABELS[userRole] || userRole;
   const roleColor = ROLE_COLORS[userRole] || ROLE_COLORS.cashier;
+  const navProps = {
+    activeTab,
+    onChange: setActiveTab,
+    role: userRole,
+    username,
+    roleLabel,
+    roleColor,
+    onLogout: handleLogout,
+    themeMode,
+    onToggleTheme: toggleTheme,
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-app)" }}>
@@ -227,30 +242,8 @@ function App() {
         </div>
       )}
 
-      <TopNav
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        role={userRole}
-        username={username}
-        roleLabel={roleLabel}
-        roleColor={roleColor}
-        onLogout={handleLogout}
-        themeMode={themeMode}
-        onToggleTheme={() => setThemeMode((m) => (m === "dark" ? "light" : "dark"))}
-      />
-
-      <MobileNav
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        role={userRole}
-        username={username}
-        roleLabel={roleLabel}
-        roleColor={roleColor}
-        onLogout={handleLogout}
-        themeMode={themeMode}
-        onToggleTheme={() => setThemeMode((m) => (m === "dark" ? "light" : "dark"))}
-        pageTitle={PAGE_TITLES[activeTab]}
-      />
+      <TopNav {...navProps} />
+      <MobileNav {...navProps} pageTitle={PAGE_TITLES[activeTab]} />
 
       <div className="app-shell">
         <main style={{ paddingBottom: 32 }}>
@@ -258,6 +251,7 @@ function App() {
             <DashboardPage
               mainProducts={mainProducts}
               token={authToken}
+              username={username}
               onApiError={handleApiError}
               onNavigate={setActiveTab}
             />
@@ -284,9 +278,7 @@ function App() {
           )}
           {activeTab === "history" && <HistoryPage onApiError={handleApiError} token={authToken} role={userRole} />}
           {activeTab === "debts" && <DebtsPage onApiError={handleApiError} token={authToken} role={userRole} />}
-          {activeTab === "activityLog" && (
-            <ActivityLogPage token={authToken} onApiError={handleApiError} />
-          )}
+          {activeTab === "activityLog" && <ActivityLogPage token={authToken} onApiError={handleApiError} />}
           {activeTab === "users" && (
             <UsersPage token={authToken} currentUsername={username} onApiError={handleApiError} />
           )}

@@ -1,6 +1,26 @@
-import { useState, useEffect } from "react";
-import { Banknote, CreditCard, Smartphone, Wallet, Check, Minus, Plus, X, ChevronDown } from "lucide-react";
-import { recordSale } from "../services/dataService";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Banknote,
+  CreditCard,
+  Smartphone,
+  Wallet,
+  Check,
+  Minus,
+  Plus,
+  X,
+  Search,
+  Trash2,
+  ShoppingBag,
+  ScanLine,
+  Undo2,
+} from "lucide-react";
+import { recordSale, updateProduct } from "../services/dataService";
+import { canManageProducts } from "../utils/roles";
+import { useBarcodeScanner } from "../hooks/useBarcodeScanner";
+import BarcodeCamera from "../components/BarcodeCamera";
+import { beep } from "../utils/scanFeedback";
+import { cameraSupported, preloadScanner, sameCode } from "../utils/scanner";
+import "./SalePage.css";
 
 const PAYMENT_METHODS = [
   { id: "CASH", label: "كاش", icon: Banknote },
@@ -9,336 +29,665 @@ const PAYMENT_METHODS = [
   { id: "JAWWALPAY", label: "جوال بي", icon: Smartphone },
 ];
 
-const PAYMENT_TIMING = [
-  { id: "now", label: "دفع الآن" },
-  { id: "debt", label: "دين / لاحقاً" },
-];
+const fmt = (n) => (Math.round(n * 100) / 100).toFixed(2);
+const unitLabel = (u) => (u === "kg" ? "كغ" : "قطعة");
+const clampQty = (v, max) => Math.max(0, Math.min(max, +v.toFixed(3)));
 
-function ProductCardSkeleton() {
+function RowSkeleton() {
   return (
-    <div className="card" style={{ background: "var(--bg-card-alt)", padding: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <li className="sp-row">
       <div style={{ flex: 1 }}>
-        <div className="skeleton" style={{ width: "60%", height: 14, marginBottom: 8 }} />
-        <div className="skeleton" style={{ width: "42%", height: 11 }} />
+        <div className="sp-sk" style={{ width: "55%", height: 14, marginBottom: 8 }} />
+        <div className="sp-sk" style={{ width: "35%", height: 11 }} />
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div className="skeleton" style={{ width: 28, height: 28, borderRadius: "50%" }} />
-        <div className="skeleton" style={{ width: 40, height: 20 }} />
-        <div className="skeleton" style={{ width: 28, height: 28, borderRadius: "50%" }} />
+      <div className="sp-sk" style={{ width: 40, height: 40, borderRadius: "50%" }} />
+    </li>
+  );
+}
+
+function ProductRow({ p, qty, mode, raw, onStep, onType, onMode }) {
+  const isKg = p.unit === "kg";
+  const out = p.quantity <= 0;
+  const low = !out && p.quantity <= p.alertThreshold;
+  const shown = raw ?? (qty ? String(mode === "shekel" ? +(qty * p.sellPrice).toFixed(2) : qty) : "");
+
+  return (
+    <li className={`sp-row${qty > 0 ? " is-in" : ""}${out ? " is-out" : ""}`}>
+      <div className="sp-row-info">
+        <div className="sp-row-name">{p.name}</div>
+        <div className="sp-row-meta">
+          <span>
+            ₪{p.sellPrice} / {unitLabel(p.unit)}
+          </span>
+          <span className={out || low ? "sp-stock sp-stock--low" : "sp-stock"}>
+            {out ? "نفد" : `متبقي ${p.quantity}`}
+          </span>
+        </div>
+      </div>
+
+      {out ? null : qty === 0 ? (
+        <button className="sp-add" onClick={() => onStep(p, 1)} aria-label={`إضافة ${p.name}`}>
+          <Plus size={18} />
+        </button>
+      ) : (
+        <div className="sp-ctl">
+          <div className="sp-stepper">
+            <button onClick={() => onStep(p, -1)} aria-label="تقليل">
+              <Minus size={16} />
+            </button>
+            {isKg ? (
+              <input
+                type="number"
+                inputMode="decimal"
+                dir="ltr"
+                className="sp-kg-input"
+                value={shown}
+                onChange={(e) => onType(p, e.target.value)}
+                aria-label={mode === "shekel" ? "المبلغ بالشيكل" : "الوزن بالكيلو"}
+              />
+            ) : (
+              <span className="sp-qty">{qty}</span>
+            )}
+            <button className="is-plus" onClick={() => onStep(p, 1)} disabled={qty >= p.quantity} aria-label="زيادة">
+              <Plus size={16} />
+            </button>
+          </div>
+          {isKg && (
+            <div className="sp-unit-toggle" role="group" aria-label="وحدة الإدخال">
+              <button className={mode === "kg" ? "on" : ""} onClick={() => onMode(p, "kg")}>
+                كغ
+              </button>
+              <button className={mode === "shekel" ? "on" : ""} onClick={() => onMode(p, "shekel")}>
+                ₪
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
+
+// موبايل/تابلت: التسجيل بيطلع كنافذة سفلية. ديسكتوب: عمود ثابت
+function useIsMobile() {
+  const query = "(max-width: 967px)";
+  const [m, setM] = useState(() => typeof window !== "undefined" && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setM(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return m;
+}
+
+// ربط باركود جديد بمنتج موجود (للمدير والمالك)
+function LinkSheet({ code, products, busy, onPick, onClose }) {
+  const [q, setQ] = useState("");
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && !busy && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose, busy]);
+
+  const list = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    return products
+      .filter((p) => !t || (p.name || "").toLowerCase().includes(t))
+      .sort((a, b) => Number(!!a.barcode) - Number(!!b.barcode));
+  }, [products, q]);
+
+  return (
+    <div className="sp-ov" onMouseDown={() => !busy && onClose()}>
+      <div className="sp-lk" role="dialog" aria-modal="true" aria-label="ربط الباركود" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="sp-lk-head">
+          <div>
+            <h2>اربط الباركود بمنتج</h2>
+            <bdi>{code}</bdi>
+          </div>
+          <button onClick={onClose} disabled={busy} aria-label="إغلاق">
+            <X size={18} />
+          </button>
+        </div>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث عن المنتج..." autoFocus />
+        <ul>
+          {list.map((p) => (
+            <li key={p.id}>
+              <button disabled={busy} onClick={() => onPick(p)}>
+                <span>{p.name}</span>
+                <small>{p.barcode ? "رح يتبدّل باركوده" : "بدون باركود"}</small>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
 }
 
-export default function SalePage({ token, mainProducts, productsLoading, refreshProducts, onApiError, role }) {
+export default function SalePage({ token, role, mainProducts, productsLoading, refreshProducts, onApiError }) {
   const [cart, setCart] = useState({});
-  const [cartMode, setCartMode] = useState({});
+  const [kgMode, setKgMode] = useState({});
+  const [rawInput, setRawInput] = useState({});
+  const [query, setQuery] = useState("");
+  const [isDebt, setIsDebt] = useState(false);
   const [customerName, setCustomerName] = useState("");
-  const [paymentTiming, setPaymentTiming] = useState("now");
-  const [timingMenuOpen, setTimingMenuOpen] = useState(false);
   const [payment, setPayment] = useState("CASH");
   const [notes, setNotes] = useState("");
   const [confirming, setConfirming] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
   const [nameError, setNameError] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [toast, setToast] = useState(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const [scanQty, setScanQty] = useState("1");
+  const [lastScan, setLastScan] = useState(null);
+  const [unknownCode, setUnknownCode] = useState(null);
+  const [linking, setLinking] = useState(false);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [camera, setCamera] = useState(false);
+  const camSupported = useMemo(() => cameraSupported(), []);
+  useEffect(() => {
+    if (camSupported) preloadScanner();
+  }, [camSupported]);
+  const canLink = canManageProducts(role);
+  const nameRef = useRef(null);
+  const toastTimer = useRef(null);
 
-  const isDebt = paymentTiming === "debt";
+  const items = useMemo(
+    () =>
+      Object.entries(cart)
+        .map(([id, qty]) => {
+          const product = mainProducts.find((p) => p.id === id);
+          return product ? { id, qty, product, line: qty * product.sellPrice } : null;
+        })
+        .filter(Boolean),
+    [cart, mainProducts]
+  );
+  const total = items.reduce((sum, i) => sum + i.line, 0);
 
-  const cartItems = Object.entries(cart)
-    .filter(([, qty]) => qty > 0)
-    .map(([productId, qty]) => {
-      const product = mainProducts.find((p) => p.id === productId);
-      return { productId, qty, product };
-    });
+  const sheetOpen = checkoutOpen && isMobile && items.length > 0;
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const onKey = (e) => e.key === "Escape" && setCheckoutOpen(false);
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [sheetOpen]);
 
-  const total = cartItems.reduce((sum, item) => sum + item.qty * (item.product?.sellPrice || 0), 0);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? mainProducts.filter((p) => (p.name || "").toLowerCase().includes(q)) : mainProducts;
+  }, [mainProducts, query]);
 
-  function adjustQty(productId, delta, unit) {
-    const product = mainProducts.find((p) => p.id === productId);
-    const maxQty = product?.quantity ?? Infinity;
+  function flash(type, text) {
+    setToast({ type, text });
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), type === "danger" ? 4000 : 2600);
+  }
 
+  function setQty(id, qty) {
     setCart((prev) => {
-      const current = prev[productId] || 0;
-      const next = Math.max(0, Math.min(maxQty, +(current + delta).toFixed(2)));
-      return { ...prev, [productId]: next };
+      const next = { ...prev };
+      if (qty > 0) next[id] = qty;
+      else delete next[id];
+      return next;
     });
   }
 
-  function setMode(productId, mode) {
-    setCartMode(prev => ({ ...prev, [productId]: mode }));
+  function clearRaw(id) {
+    setRawInput((r) => {
+      const next = { ...r };
+      delete next[id];
+      return next;
+    });
   }
 
-  function handleKgInput(productId, value, sellPrice, mode) {
-    const product = mainProducts.find((p) => p.id === productId);
-    const maxQty = product?.quantity ?? Infinity;
+  function step(p, dir) {
+    const size = p.unit === "kg" ? 0.5 : 1;
+    clearRaw(p.id);
+    setQty(p.id, clampQty((cart[p.id] || 0) + dir * size, p.quantity));
+  }
 
-    const val = parseFloat(value) || 0;
-    let qtyInKg = mode === "shekel" ? val / sellPrice : val;
-    qtyInKg = Math.max(0, Math.min(maxQty, +qtyInKg.toFixed(3)));
+  function typeKg(p, text) {
+    setRawInput((r) => ({ ...r, [p.id]: text }));
+    const val = parseFloat(text) || 0;
+    const kg = kgMode[p.id] === "shekel" ? (p.sellPrice > 0 ? val / p.sellPrice : 0) : val;
+    setQty(p.id, clampQty(kg, p.quantity));
+  }
 
-    setCart(prev => ({ ...prev, [productId]: qtyInKg }));
+  function changeMode(p, mode) {
+    clearRaw(p.id);
+    setKgMode((m) => ({ ...m, [p.id]: mode }));
+  }
+
+  // ===== مسح الباركود =====
+  function addScanned(p) {
+    const n = parseFloat(scanQty) > 0 ? parseFloat(scanQty) : 1;
+    const prev = cart[p.id] || 0;
+    const next = clampQty(prev + n, p.quantity);
+    if (next <= prev) {
+      beep(false);
+      flash("danger", p.quantity <= 0 ? `${p.name} نفد من المخزون` : `المتوفر من ${p.name}: ${p.quantity} بس`);
+      return;
+    }
+    clearRaw(p.id);
+    setQty(p.id, next);
+    setLastScan({ id: p.id, name: p.name, added: +(next - prev).toFixed(3), prev, unit: p.unit, line: (next - prev) * p.sellPrice });
+    setUnknownCode(null);
+    setScanQty("1");
+    beep(true);
+  }
+
+  function handleScan(raw) {
+    const code = String(raw).trim();
+    if (!code) return;
+    const p = mainProducts.find((x) => x.barcode && sameCode(x.barcode, code));
+    if (p) return addScanned(p);
+    beep(false);
+    setLastScan(null);
+    setUnknownCode(code);
+  }
+
+  // قارئ الباركود لما يكون حقل البحث مركّز: الكود بيوصل للحقل، وEnter بيضيفه للفاتورة
+  function onSearchKey(e) {
+    if (e.key !== "Enter") return;
+    const code = query.trim();
+    if (!code) return;
+    const known = mainProducts.some((x) => x.barcode && sameCode(x.barcode, code));
+    if (known || /^\d{6,}$/.test(code)) {
+      e.preventDefault();
+      handleScan(code);
+      setQuery("");
+    }
+  }
+
+  function undoScan() {
+    if (!lastScan) return;
+    clearRaw(lastScan.id);
+    setQty(lastScan.id, lastScan.prev);
+    setLastScan(null);
+  }
+
+  async function linkBarcode(p) {
+    setLinkBusy(true);
+    try {
+      await updateProduct(
+        p.id,
+        {
+          name: p.name,
+          buyPrice: Number.isFinite(p.buyPrice) ? p.buyPrice : 0,
+          sellPrice: p.sellPrice,
+          quantity: p.quantity,
+          unit: p.unit,
+          alertThreshold: p.alertThreshold,
+          barcode: unknownCode,
+        },
+        token
+      );
+      setLinking(false);
+      addScanned(p);
+      flash("success", `تم ربط الباركود بـ ${p.name}`);
+      await refreshProducts();
+    } catch (err) {
+      if (err?.code !== "SESSION_EXPIRED") flash("danger", err.message || "ما قدرنا نربط الباركود، حاول مرة ثانية.");
+      else onApiError?.(err);
+    } finally {
+      setLinkBusy(false);
+    }
+  }
+
+  useBarcodeScanner(handleScan, { enabled: !linking && !camera });
+
+  function resetAll() {
+    setCart({});
+    setKgMode({});
+    setRawInput({});
+    setCustomerName("");
+    setNotes("");
+    setIsDebt(false);
+    setPayment("CASH");
+    setNameError(false);
+    setCheckoutOpen(false);
+    setLastScan(null);
+    setUnknownCode(null);
   }
 
   async function handleConfirm() {
-    if (cartItems.length === 0) return;
+    if (items.length === 0 || confirming) return;
     if (isDebt && !customerName.trim()) {
       setNameError(true);
+      nameRef.current?.focus();
       return;
     }
-    setNameError(false);
     setConfirming(true);
     try {
-      await recordSale({
-        customerName: customerName.trim() || null,
-        isDebt,
-        paymentMethod: isDebt ? null : payment,
-        items: cartItems.map((i) => ({
-          productId: i.productId,
-          qty: i.qty,
-          unitPrice: i.product.sellPrice,
-        })),
-        notes: notes.trim() || null,
-        total,
-      }, token);
-      setSuccessMsg(isDebt ? "تم تسجيل البيع كدين ✓" : "تم تسجيل البيع بنجاح ✓");
-      setCart({});
-      setCartMode({});
-      setCustomerName("");
-      setNotes("");
-      setPaymentTiming("now");
+      await recordSale(
+        {
+          customerName: customerName.trim() || null,
+          isDebt,
+          paymentMethod: isDebt ? null : payment,
+          items: items.map((i) => ({ productId: i.id, qty: i.qty, unitPrice: i.product.sellPrice })),
+          notes: notes.trim() || null,
+          total,
+        },
+        token
+      );
+      flash("success", isDebt ? "تم تسجيل البيع كدين" : "تم تسجيل البيع بنجاح");
+      resetAll();
       await refreshProducts();
-      setTimeout(() => setSuccessMsg(""), 2500);
     } catch (err) {
-      if (err?.code !== "SESSION_EXPIRED") {
-        setErrorMsg(err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
-        setTimeout(() => setErrorMsg(""), 3000);
-      } else {
-        onApiError?.(err);
-      }
+      if (err?.code !== "SESSION_EXPIRED") flash("danger", err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
+      else onApiError?.(err);
     } finally {
       setConfirming(false);
     }
   }
 
+  const showSkeleton = productsLoading && mainProducts.length === 0;
+
   return (
-    <div className="sale-page">
-      {successMsg && (
-        <div className="card" style={{ background: "var(--color-success-soft)", color: "var(--color-success)", textAlign: "center", fontWeight: 600 }}>
-          {successMsg}
+    <div className="sp-page">
+      {toast && (
+        <div className={`sp-toast sp-toast--${toast.type}`} role="status">
+          {toast.text}
         </div>
       )}
 
-      {errorMsg && (
-        <div className="card" style={{ background: "var(--color-danger-soft)", color: "var(--color-danger)", textAlign: "center", fontWeight: 600 }}>
-          {errorMsg}
-        </div>
-      )}
-
-      <div className="sale-layout">
-        <div className="sale-cart-column">
-          {/* اسم الزبون + توقيت الدفع */}
-          <div className="card" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div>
-              <label style={{ color: "var(--text-secondary)", fontSize: 13, display: "block", marginBottom: 8 }}>
-                اسم الزبون {isDebt ? "" : "(اختياري)"}
-              </label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e) => {
-                  setCustomerName(e.target.value);
-                  if (e.target.value.trim()) setNameError(false);
-                }}
-                placeholder="اكتب اسم الزبون..."
-                style={{ ...inputStyle, border: nameError ? "1px solid var(--color-danger)" : inputStyle.border }}
-              />
-              {nameError && (
-                <div style={{ color: "var(--color-danger)", fontSize: 12, marginTop: 4 }}>
-                  اسم الزبون لازم لتسجيل دين
-                </div>
-              )}
-            </div>
-
-            <div style={{ position: "relative" }}>
-              <label style={{ color: "var(--text-secondary)", fontSize: 13, display: "block", marginBottom: 8 }}>الدفع</label>
-              <button
-                onClick={() => setTimingMenuOpen((v) => !v)}
-                style={{ ...inputStyle, display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid var(--color-primary)", color: "var(--text-primary)" }}
-              >
-                <ChevronDown size={16} color="var(--text-secondary)" />
-                <span>{PAYMENT_TIMING.find((t) => t.id === paymentTiming)?.label}{paymentTiming === "now" && " ✓"}</span>
+      {/* ===== المنتجات ===== */}
+      <section className="sp-main">
+        <div className="sp-scanbar">
+          <div className="sp-search">
+            <Search size={18} aria-hidden="true" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onSearchKey}
+              placeholder="ابحث عن منتج أو امسح الباركود..."
+              aria-label="بحث عن منتج أو مسح باركود"
+            />
+            {query && (
+              <button className="sp-search-x" onClick={() => setQuery("")} aria-label="مسح البحث">
+                <X size={16} />
               </button>
-              {timingMenuOpen && (
-                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "var(--bg-card-alt)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", overflow: "hidden", zIndex: 20, boxShadow: "var(--shadow-elevated)" }}>
-                  {PAYMENT_TIMING.map((t) => {
-                    const active = paymentTiming === t.id;
-                    return (
-                      <button key={t.id} onClick={() => { setPaymentTiming(t.id); setTimingMenuOpen(false); }}
-                        style={{ width: "100%", padding: "12px 14px", textAlign: "right", background: active ? "var(--color-primary)" : "transparent", color: active ? "var(--text-on-primary)" : "var(--text-primary)", border: "none", fontSize: 14 }}>
-                        {t.label}{active && " ✓"}
-                      </button>
-                    );
-                  })}
-                </div>
+            )}
+          </div>
+          <label className={`sp-qtybox${scanQty !== "1" && scanQty !== "" ? " is-set" : ""}`}>
+            <span>×</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              dir="ltr"
+              min="0"
+              step="any"
+              value={scanQty}
+              onChange={(e) => setScanQty(e.target.value)}
+              aria-label="كمية الصنف اللي رح تمسحه"
+            />
+          </label>
+          {camSupported && (
+            <button className="sp-cam" onClick={() => setCamera(true)} aria-label="مسح بالكاميرا">
+              <ScanLine size={20} />
+            </button>
+          )}
+        </div>
+
+        {lastScan && (
+          <div className="sp-scan-ok" role="status">
+            <Check size={16} />
+            <span className="sp-scan-name">
+              <b>{lastScan.name}</b> × {lastScan.added}
+              {lastScan.unit === "kg" ? " كغ" : ""}
+            </span>
+            <span className="sp-scan-line">₪{fmt(lastScan.line)}</span>
+            <button onClick={undoScan}>
+              <Undo2 size={14} />
+              تراجع
+            </button>
+          </div>
+        )}
+        {unknownCode && (
+          <div className="sp-scan-bad" role="alert">
+            <span>
+              الباركود <bdi>{unknownCode}</bdi> مش مسجّل بأي منتج.
+            </span>
+            {canLink ? <button onClick={() => setLinking(true)}>ربطه بمنتج</button> : <small>بلّغ المدير ليضيفه.</small>}
+            <button className="sp-scan-x" onClick={() => setUnknownCode(null)} aria-label="إغلاق">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        <div className="sp-listhead">
+          <span>المنتجات</span>
+          <span>{filtered.length} منتج</span>
+        </div>
+
+        <ul className="sp-list">
+          {showSkeleton && Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)}
+          {!showSkeleton && mainProducts.length === 0 && <li className="sp-empty">ما في منتجات بعد.</li>}
+          {!showSkeleton && mainProducts.length > 0 && filtered.length === 0 && (
+            <li className="sp-empty">ما في منتج باسم "{query}".</li>
+          )}
+          {filtered.map((p) => (
+            <ProductRow
+              key={p.id}
+              p={p}
+              qty={cart[p.id] || 0}
+              mode={kgMode[p.id] || "kg"}
+              raw={rawInput[p.id]}
+              onStep={step}
+              onType={typeKg}
+              onMode={changeMode}
+            />
+          ))}
+        </ul>
+      </section>
+
+      {/* ===== الفاتورة ===== */}
+      {sheetOpen && <div className="sp-backdrop" onClick={() => setCheckoutOpen(false)} />}
+      <div
+        className={`sp-cart${sheetOpen ? " is-open" : ""}`}
+        role={sheetOpen ? "dialog" : undefined}
+        aria-modal={sheetOpen ? true : undefined}
+        aria-label={sheetOpen ? "إتمام البيع" : undefined}
+      >
+        <div className="sp-sheet-head">
+          <h2>إتمام البيع</h2>
+          <button onClick={() => setCheckoutOpen(false)} aria-label="إغلاق">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="sp-panel">
+          <div className={`sp-seg${isDebt ? " is-debt" : ""}`} role="radiogroup" aria-label="طريقة الدفع">
+            <button role="radio" aria-checked={!isDebt} onClick={() => setIsDebt(false)}>
+              دفع الآن
+            </button>
+            <button role="radio" aria-checked={isDebt} onClick={() => setIsDebt(true)}>
+              دين
+            </button>
+          </div>
+
+          <div className="sp-field">
+            <label htmlFor="sp-name">
+              اسم الزبون <em>{isDebt ? "(مطلوب)" : "(اختياري)"}</em>
+            </label>
+            <input
+              id="sp-name"
+              ref={nameRef}
+              type="text"
+              value={customerName}
+              onChange={(e) => {
+                setCustomerName(e.target.value);
+                if (e.target.value.trim()) setNameError(false);
+              }}
+              placeholder="اكتب اسم الزبون..."
+              aria-invalid={nameError}
+            />
+            {nameError && <div className="sp-err">اسم الزبون لازم لتسجيل دين</div>}
+          </div>
+
+          {isDebt ? (
+            <div className="sp-note">رح تتسجل هاي العملية كدين على اسم الزبون وتظهر بصفحة الديون.</div>
+          ) : (
+            <div className="sp-methods" role="radiogroup" aria-label="وسيلة الدفع">
+              {PAYMENT_METHODS.map((m) => {
+                const Icon = m.icon;
+                return (
+                  <button
+                    key={m.id}
+                    role="radio"
+                    aria-checked={payment === m.id}
+                    className={payment === m.id ? "on" : ""}
+                    onClick={() => setPayment(m.id)}
+                  >
+                    <Icon size={16} />
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="sp-field">
+            <label htmlFor="sp-notes">
+              ملاحظات <em>(اختياري)</em>
+            </label>
+            <textarea
+              id="sp-notes"
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="أي ملاحظة على هاي العملية..."
+            />
+          </div>
+        </div>
+
+        <div className="sp-receipt-wrap">
+          <div className="sp-receipt">
+            <div className="sp-r-head">
+              <span>الفاتورة</span>
+              {items.length > 0 && (
+                <button className="sp-clear" onClick={resetAll}>
+                  <Trash2 size={14} />
+                  تفريغ
+                </button>
               )}
             </div>
-          </div>
 
-          {/* طريقة الدفع */}
-          {!isDebt && (
-            <div className="card">
-              <div className="section-header">
-                <span className="section-title">اختر المنتجات</span>
-                <span className="section-count">{mainProducts.length} منتج</span>
-              </div>
-              <div className="product-list">
-                {productsLoading && mainProducts.length === 0 &&
-                  Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)}
-
-                {(!productsLoading || mainProducts.length > 0) && mainProducts.map((p) => {
-                })}
-              </div>
-            </div>
-          )}
-
-          {isDebt && (
-            <div className="card" style={{ background: "var(--color-warning-soft)", color: "var(--color-warning)", fontSize: 13, textAlign: "center" }}>
-              هاي العملية رح تتسجل كدين على اسم الزبون وتظهر بصفحة الديون
-            </div>
-          )}
-
-          {/* ملاحظات */}
-          <div className="card">
-            <label style={{ color: "var(--text-secondary)", fontSize: 13, display: "block", marginBottom: 8 }}>ملاحظات (اختياري)</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="أي ملاحظة على هاي العملية..." rows={2} style={{ ...inputStyle, resize: "none" }} />
-          </div>
-
-          {/* السلة + التأكيد */}
-          {cartItems.length > 0 && (
-            <div className="card receipt-card" style={{ position: "sticky", bottom: 8 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12, marginTop: 8 }}>
-                {cartItems.map((item) => (
-                  <div key={item.productId} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                    <button onClick={() => setCart(prev => { const n = { ...prev }; delete n[item.productId]; return n })}
-                      style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
+            {items.length === 0 ? (
+              <div className="sp-r-empty">ما في أصناف بعد. اختار من القائمة.</div>
+            ) : (
+              <ul className="sp-r-list">
+                {items.map((i) => (
+                  <li key={i.id}>
+                    <button
+                      className="sp-r-x"
+                      onClick={() => {
+                        clearRaw(i.id);
+                        setQty(i.id, 0);
+                      }}
+                      aria-label={`حذف ${i.product.name}`}
+                    >
                       <X size={14} />
                     </button>
-                    <span style={{ color: "var(--text-secondary)" }}>{item.product?.name}</span>
-                    <span>{item.qty} × ₪{item.product?.sellPrice}</span>
-                  </div>
+                    <div className="sp-r-name">
+                      <div>{i.product.name}</div>
+                      <small>
+                        {i.qty} {unitLabel(i.product.unit)} × ₪{i.product.sellPrice}
+                      </small>
+                    </div>
+                    <div className="sp-r-line">₪{fmt(i.line)}</div>
+                  </li>
                 ))}
-              </div>
+              </ul>
+            )}
 
-              <div className="receipt-total-row">
-                <span>الإجمالي</span>
-                <span style={{ color: "var(--color-primary)" }}>₪{total.toFixed(2)}</span>
-              </div>
-
-              <button onClick={handleConfirm} disabled={confirming} className="btn-whatsapp"
-                style={{ width: "100%", justifyContent: "center", background: isDebt ? "var(--color-warning)" : "var(--color-primary)", opacity: confirming ? 0.6 : 1 }}>
-                <Check size={18} />
-                {confirming ? "جاري التسجيل..." : isDebt ? "تأكيد البيع كدين" : "تأكيد البيع"}
-              </button>
+            <div className="sp-r-total">
+              <span>الإجمالي</span>
+              <span>₪{fmt(total)}</span>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* المنتجات */}
-        <div className="card">
-          <div className="section-header">
-            <span className="section-title">اختر المنتجات</span>
-            <span className="section-count">{mainProducts.length} منتج</span>
-          </div>
-          <div className="product-list">
-            {mainProducts.map((p) => {
-              const qty = cart[p.id] || 0;
-              const mode = cartMode[p.id] || "kg";
-              const low = p.quantity <= p.alertThreshold;
-              const isKg = p.unit === "kg";
-
-              return (
-                <div key={p.id} className="card"
-                  style={{ background: "var(--bg-card-alt)", padding: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{p.name}</div>
-                    <div style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 2 }}>
-                      ₪{p.sellPrice} / {isKg ? "كغ" : "قطعة"} ·{" "}
-                      <span style={{ color: low ? "var(--color-danger)" : "var(--text-secondary)" }}>
-                        متبقي {p.quantity}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <button onClick={() => adjustQty(p.id, -1, p.unit)} style={qtyBtnStyle}>
-                      <Minus size={14} />
-                    </button>
-
-                    {isKg ? (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                        <div style={{ display: "flex", gap: 3 }}>
-                          <button onClick={() => setMode(p.id, "kg")}
-                            style={{ padding: "2px 8px", borderRadius: 4, border: "none", fontSize: 11, cursor: "pointer", background: mode === "kg" ? "var(--color-primary)" : "var(--bg-pill)", color: mode === "kg" ? "white" : "var(--text-secondary)" }}>
-                            كغ
-                          </button>
-                          <button onClick={() => setMode(p.id, "shekel")}
-                            style={{ padding: "2px 8px", borderRadius: 4, border: "none", fontSize: 11, cursor: "pointer", background: mode === "shekel" ? "var(--color-primary)" : "var(--bg-pill)", color: mode === "shekel" ? "white" : "var(--text-secondary)" }}>
-                            ₪
-                          </button>
-                        </div>
-
-                        <input
-                          type="number"
-                          dir="ltr"
-                          value={mode === "shekel" ? (qty ? + Math.round(qty * p.sellPrice) : "") : (qty || "")}
-                          onChange={e => handleKgInput(p.id, e.target.value, p.sellPrice, mode)}
-                          placeholder={mode === "shekel" ? "₪" : "Kg"}
-                          style={{ width: 64, textAlign: "center", background: "var(--bg-pill)", border: "1px solid var(--border-subtle)", borderRadius: 4, color: "var(--text-primary)", padding: "4px 6px", fontSize: 13 }}
-                        />
-
-                        {mode === "shekel" && qty > 0 && (
-                          <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{qty.toFixed(2)} كغ</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span style={{ minWidth: 32, textAlign: "center", fontWeight: 600 }}>{qty || 0}</span>
-                    )}
-
-                    <button onClick={() => adjustQty(p.id, 1, p.unit)} style={{ ...qtyBtnStyle, background: "var(--color-primary)" }}>
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="sp-confirm-wrap">
+        <button
+          className={`sp-confirm${isDebt ? " is-debt" : ""}`}
+          onClick={handleConfirm}
+          disabled={items.length === 0 || confirming}
+        >
+          <Check size={18} />
+          {confirming ? "جاري التسجيل..." : isDebt ? "تسجيل كدين" : "تأكيد البيع"}
+        </button>
         </div>
       </div>
+
+      {camera && (
+        <BarcodeCamera onDetect={handleScan} onClose={() => setCamera(false)}>
+          <div className="sp-cam-sum">
+            {lastScan ? (
+              <div className="sp-scan-ok">
+                <Check size={16} />
+                <span className="sp-scan-name">
+                  <b>{lastScan.name}</b> × {lastScan.added}
+                </span>
+                <span className="sp-scan-line">₪{fmt(lastScan.line)}</span>
+                <button onClick={undoScan}>
+                  <Undo2 size={14} />
+                  تراجع
+                </button>
+              </div>
+            ) : unknownCode ? (
+              <div className="sp-scan-bad" role="alert">
+                <span>
+                  الباركود <bdi>{unknownCode}</bdi> مش مسجّل بأي منتج.
+                </span>
+              </div>
+            ) : (
+              <div className="sp-cam-hint">وجّه الكاميرا نحو الباركود</div>
+            )}
+            <div className="sp-cam-total">
+              <span>
+                {items.length} {items.length === 1 ? "صنف" : "أصناف"}
+              </span>
+              <b>₪{fmt(total)}</b>
+            </div>
+            <button
+              className="sp-cam-done"
+              onClick={() => {
+                setCamera(false);
+                if (items.length) setCheckoutOpen(true);
+              }}
+            >
+              إنهاء المسح ومتابعة
+            </button>
+          </div>
+        </BarcodeCamera>
+      )}
+      {linking && unknownCode && (
+        <LinkSheet code={unknownCode} products={mainProducts} busy={linkBusy} onPick={linkBarcode} onClose={() => setLinking(false)} />
+      )}
+
+      {/* شريط سفلي بالموبايل */}
+      {items.length > 0 && (
+        <div className="sp-bar">
+          <div>
+            <div className="sp-bar-count">
+              {items.length} {items.length === 1 ? "صنف" : "أصناف"}
+            </div>
+            <div className="sp-bar-total">₪{fmt(total)}</div>
+          </div>
+          <button onClick={() => setCheckoutOpen(true)}>
+            <ShoppingBag size={17} />
+            مراجعة وتأكيد
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-
-const inputStyle = {
-  width: "100%",
-  background: "var(--bg-pill)",
-  border: "1px solid var(--border-subtle)",
-  borderRadius: "var(--radius-sm)",
-  padding: "10px 12px",
-  color: "var(--text-primary)",
-  fontSize: 14,
-  outline: "none",
-};
-
-const qtyBtnStyle = {
-  width: 28,
-  height: 28,
-  borderRadius: "50%",
-  border: "none",
-  background: "var(--bg-pill)",
-  color: "var(--text-primary)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-};
