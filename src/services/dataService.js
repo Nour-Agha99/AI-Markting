@@ -100,6 +100,7 @@ export async function getProducts(token) {
     id: p.id,
     name: p.name,
     unit: p.unit,
+    barcode: p.barcode || null,
     sellPrice: Number(p.sellPrice ?? p.sell_price),
     buyPrice: Number(p.buyPrice ?? p.buy_price),
     quantity: Number(p.quantity),
@@ -170,9 +171,9 @@ export async function getDebts(token) {
     paidAmount: Number(d.paidAmount),
     timeline: Array.isArray(d.timeline)
       ? d.timeline.map((e) => ({
-          ...e,
-          amount: Number(e.amount),
-        }))
+        ...e,
+        amount: Number(e.amount),
+      }))
       : [],
   }));
 }
