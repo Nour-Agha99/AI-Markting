@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, TrendingUp, TrendingDown, Wallet, AlertTriangle, PackageX, ChevronLeft } from "lucide-react";
-import { getHistory, getActivityLog } from "../services/dataService";
+import { getDashboard, getActivityLog } from "../services/dataService";
 import { getActionMeta } from "./ActivityLogPage";
 import "./DashboardPage.css";
 
@@ -27,8 +27,21 @@ function greeting() {
   return h < 12 ? "صباح الخير" : h < 17 ? "أهلاً فيك" : "مساء الخير";
 }
 
+const EMPTY = {
+  days: Array.from({ length: 7 }, (_, i) => ({ t: Date.now() - (6 - i) * 86400000, total: 0 })),
+  slip: { byMethod: {}, debt: 0, payments: 0, profit: 0, count: 0 },
+  todayTotal: 0,
+  weekTotal: 0,
+  delta: null,
+  outstanding: 0,
+  cashIn: 0,
+  hasProfit: false,
+  top: [],
+  bottom: [],
+};
+
 export default function DashboardPage({ token, mainProducts = [], username, onApiError, onNavigate }) {
-  const [history, setHistory] = useState([]);
+  const [dash, setDash] = useState(null);
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -37,15 +50,15 @@ export default function DashboardPage({ token, mainProducts = [], username, onAp
   async function refresh() {
     setLoading(true);
     setError("");
-    const [h, a] = await Promise.allSettled([getHistory(token), getActivityLog({ limit: 5, offset: 0 }, token)]);
-    if (h.status === "fulfilled") setHistory(h.value);
-    else if (h.reason?.code === "SESSION_EXPIRED") {
+    const [d, a] = await Promise.allSettled([getDashboard(token), getActivityLog({ limit: 5, offset: 0 }, token)]);
+    if (d.status === "fulfilled") setDash(d.value);
+    else if (d.reason?.code === "SESSION_EXPIRED") {
       try {
-        onApiError?.(h.reason);
+        onApiError?.(d.reason);
       } catch {
         /* انتهت الجلسة */
       }
-    } else setError(h.reason?.message || "ما قدرنا نجيب بيانات لوحة التحكم.");
+    } else setError(d.reason?.message || "ما قدرنا نجيب بيانات لوحة التحكم.");
     setActivity(a.status === "fulfilled" ? a.value.items : []);
     setLoading(false);
   }
@@ -54,62 +67,7 @@ export default function DashboardPage({ token, mainProducts = [], username, onAp
     refresh();
   }, [token]);
 
-  const data = useMemo(() => {
-    const today0 = startOfDay(Date.now());
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(today0);
-      d.setDate(d.getDate() - (6 - i));
-      return { t: d.getTime(), total: 0 };
-    });
-    const idxOf = new Map(days.map((d, i) => [d.t, i]));
-    const slip = { byMethod: {}, debt: 0, payments: 0, profit: 0, count: 0 };
-    const products = new Map();
-    const cutoff = days[0].t - 23 * 86400000; // آخر 30 يوم تقريباً
-    let outstanding = 0;
-
-    for (const r of history) {
-      const amt = Number(r.amount) || 0;
-      const t = startOfDay(r.date);
-      if (r.type === "debt") outstanding += amt;
-      if (r.type === "payment") {
-        outstanding -= amt;
-        if (t === today0) slip.payments += amt;
-        continue;
-      }
-      const i = idxOf.get(t);
-      if (i !== undefined) days[i].total += amt;
-      if (t === today0) {
-        slip.count++;
-        if (r.type === "debt") slip.debt += amt;
-        else slip.byMethod[r.paymentMethod || "CASH"] = (slip.byMethod[r.paymentMethod || "CASH"] || 0) + amt;
-        if (r.profit != null) slip.profit += Number(r.profit) || 0;
-      }
-      if (t >= cutoff) {
-        for (const it of r.items || []) {
-          const p = products.get(it.name) || { name: it.name, qty: 0, unit: it.unit };
-          p.qty += Number(it.qty) || 0;
-          products.set(it.name, p);
-        }
-      }
-    }
-
-    const todayTotal = days[6].total;
-    const yesterday = days[5].total;
-    const ranked = [...products.values()].sort((a, b) => b.qty - a.qty);
-    const paidIn = Object.values(slip.byMethod).reduce((s, v) => s + v, 0);
-    return {
-      days,
-      slip,
-      todayTotal,
-      weekTotal: days.reduce((s, d) => s + d.total, 0),
-      delta: yesterday > 0 ? ((todayTotal - yesterday) / yesterday) * 100 : null,
-      outstanding: Math.max(outstanding, 0),
-      cashIn: paidIn + slip.payments,
-      hasProfit: history.some((r) => r.profit != null),
-      top: ranked.slice(0, 5),
-      bottom: [...ranked].reverse().slice(0, 5),
-    };
-  }, [history]);
+  const data = dash || EMPTY;
 
   const attention = useMemo(
     () => mainProducts.filter((p) => p.quantity <= p.alertThreshold).sort((a, b) => a.quantity - b.quantity),

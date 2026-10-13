@@ -5,6 +5,7 @@
   "type": "module",
   "homepage": "https://Nour-Agha99.github.io/AI-Markting",
   "scripts": {
+    "smoke": "node scripts/smoke_test.mjs",
     "dev": "vite",
     "build": "vite build",
     "predeploy": "npm run build",

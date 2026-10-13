@@ -293,3 +293,14 @@ export async function getActivityLog({ limit = 30, offset = 0, userId = null, ac
     nextOffset: Number(data.nextOffset ?? offset + items.length),
   };
 }
+
+// ---------- الداشبورد (أونر فقط) ----------
+export async function getDashboard(token) {
+  const data = await apiRequest(ENDPOINTS.getDashboard, { token });
+  if (!data?.success) {
+    const error = new Error(data?.error || "ما قدرنا نجيب بيانات لوحة التحكم.");
+    error.code = data?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+  return data;
+}
