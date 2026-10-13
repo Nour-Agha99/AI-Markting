@@ -179,12 +179,16 @@ export async function getDebts(token) {
 }
 
 export async function recordPayment(customerName, amount, token) {
-  return apiRequest(ENDPOINTS.payDebt, {
+  const r = await apiRequest(ENDPOINTS.payDebt, {
     method: "POST",
     token,
-    body: { customerName, amount },
+    body: { customerName, amount }
   });
-
+  if (!r?.success) {
+    const e = new Error(r?.error || "ما قدرنا نسجّل الدفعة.");
+    e.code = r?.code || "UNKNOWN_ERROR"; throw e;
+  }
+  return r;
 }
 
 // ---------- السجل ----------

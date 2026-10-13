@@ -192,6 +192,7 @@ export default function SalePage({ token, role, mainProducts, productsLoading, r
   const canLink = canManageProducts(role);
   const nameRef = useRef(null);
   const toastTimer = useRef(null);
+  const attempt = useRef(null);
 
   const items = useMemo(
     () =>
@@ -356,6 +357,7 @@ export default function SalePage({ token, role, mainProducts, productsLoading, r
     setUnknownCode(null);
   }
 
+
   async function handleConfirm() {
     if (items.length === 0 || confirming) return;
     if (isDebt && !customerName.trim()) {
@@ -363,25 +365,38 @@ export default function SalePage({ token, role, mainProducts, productsLoading, r
       nameRef.current?.focus();
       return;
     }
+
+    const payload = {
+      customerName: customerName.trim() || null,
+      isDebt,
+      paymentMethod: isDebt ? null : payment,
+      items: items.map((i) => ({ productId: i.id, qty: i.qty, unitPrice: i.product.sellPrice })),
+      notes: notes.trim() || null,
+      total,
+    };
+
+    const fp = JSON.stringify(payload);
+    if (attempt.current?.fp !== fp) {
+      attempt.current = {
+        fp,
+        key: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      };
+    }
+
     setConfirming(true);
     try {
-      await recordSale(
-        {
-          customerName: customerName.trim() || null,
-          isDebt,
-          paymentMethod: isDebt ? null : payment,
-          items: items.map((i) => ({ productId: i.id, qty: i.qty, unitPrice: i.product.sellPrice })),
-          notes: notes.trim() || null,
-          total,
-        },
-        token
-      );
+      await recordSale({ ...payload, idempotencyKey: attempt.current.key }, token);
+      attempt.current = null;
       flash("success", isDebt ? "تم تسجيل البيع كدين" : "تم تسجيل البيع بنجاح");
       resetAll();
       await refreshProducts();
     } catch (err) {
-      if (err?.code !== "SESSION_EXPIRED") flash("danger", err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
-      else onApiError?.(err);
+      if (err?.code === "SESSION_EXPIRED") {
+        onApiError?.(err);
+      } else {
+        flash("danger", err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
+        if (err?.code === "PRICE_CHANGED" || err?.code === "INSUFFICIENT_STOCK") refreshProducts();
+      }
     } finally {
       setConfirming(false);
     }
@@ -616,14 +631,14 @@ export default function SalePage({ token, role, mainProducts, productsLoading, r
         </div>
 
         <div className="sp-confirm-wrap">
-        <button
-          className={`sp-confirm${isDebt ? " is-debt" : ""}`}
-          onClick={handleConfirm}
-          disabled={items.length === 0 || confirming}
-        >
-          <Check size={18} />
-          {confirming ? "جاري التسجيل..." : isDebt ? "تسجيل كدين" : "تأكيد البيع"}
-        </button>
+          <button
+            className={`sp-confirm${isDebt ? " is-debt" : ""}`}
+            onClick={handleConfirm}
+            disabled={items.length === 0 || confirming}
+          >
+            <Check size={18} />
+            {confirming ? "جاري التسجيل..." : isDebt ? "تسجيل كدين" : "تأكيد البيع"}
+          </button>
         </div>
       </div>
 
