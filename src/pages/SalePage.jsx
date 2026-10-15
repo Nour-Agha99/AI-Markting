@@ -323,6 +323,7 @@ export default function SalePage({ token, role, mainProducts, productsLoading, r
           buyPrice: Number.isFinite(p.buyPrice) ? p.buyPrice : 0,
           sellPrice: p.sellPrice,
           quantity: p.quantity,
+          expectedQuantity: p.quantity,
           unit: p.unit,
           alertThreshold: p.alertThreshold,
           barcode: unknownCode,
