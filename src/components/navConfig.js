@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { LayoutDashboard, ShoppingBag, Package, Clock, Wallet, ShieldCheck, Users } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Package, Clock, Wallet, ShieldCheck, Users, Contact } from "lucide-react";
 import { getVisibleTabIds } from "../utils/roles";
 
 export const NAV_TABS = [
@@ -8,6 +8,7 @@ export const NAV_TABS = [
   { id: "products", label: "المنتجات", icon: Package, desc: "الأسعار والمخزون", priority: 4 },
   { id: "history", label: "السجل", icon: Clock, desc: "كل المبيعات والتسديدات", priority: 5 },
   { id: "debts", label: "الديون", icon: Wallet, desc: "ديون الزبائن وتسديداتها", priority: 2 },
+  { id: "customers", label: "الزبائن", icon: Contact, desc: "أرقام الهواتف وحدود الدين", priority: 5.5, more: true, group: "الإدارة" },
   { id: "activityLog", label: "النشاطات", icon: ShieldCheck, desc: "سجل كل حركة بالنظام", priority: 6, more: true, group: "الإدارة" },
   { id: "users", label: "المستخدمون", icon: Users, desc: "الحسابات والصلاحيات", priority: 7, more: true, group: "الإدارة" },
 ];

@@ -47,6 +47,7 @@ const TAB_VISIBILITY = {
   debts: () => true,
   activityLog: (role) => canViewActivityLog(role),
   users: (role) => canManageUsers(role),
+    customers: (role) => canManageProducts(role),
 };
 
 export function getVisibleTabIds(role) {

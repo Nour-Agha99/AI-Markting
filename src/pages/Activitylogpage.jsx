@@ -35,16 +35,28 @@ export const ACTION_META = {
   user_enabled: { label: "تفعيل حساب", icon: UserCheck, color: "var(--color-success)", soft: "var(--color-success-soft)", risk: true },
   user_disabled: { label: "تعطيل حساب", icon: UserX, color: "var(--color-danger)", soft: "var(--color-danger-soft)", risk: true },
   force_logout: { label: "إنهاء جلسة", icon: Unplug, color: "var(--color-warning)", soft: "var(--color-warning-soft)", risk: true },
+  customer_added: { label: "إضافة زبون", icon: UserPlus, color: "var(--color-primary)", soft: "var(--color-primary-soft)" },
+  customer_updated: { label: "تعديل زبون", icon: UserPlus, color: "var(--color-warning)", soft: "var(--color-warning-soft)" },
+  login_failed: { label: "محاولة دخول فاشلة", icon: UserX, color: "var(--color-danger)", soft: "var(--color-danger-soft)", risk: true },
+  login_locked: { label: "قفل بسبب محاولات", icon: UserX, color: "var(--color-danger)", soft: "var(--color-danger-soft)", risk: true },
+  permission_denied: { label: "محاولة بدون صلاحية", icon: UserX, color: "var(--color-warning)", soft: "var(--color-warning-soft)", risk: true },
+  agent_action_requested: { label: "وكيل طلب إجراء", icon: Bot, color: "var(--color-primary)", soft: "var(--color-primary-soft)" },
+  agent_action_approved: { label: "موافقة على إجراء وكيل", icon: Bot, color: "var(--color-success)", soft: "var(--color-success-soft)", risk: true },
+  agent_action_rejected: { label: "رفض إجراء وكيل", icon: Bot, color: "var(--text-secondary)", soft: "var(--bg-pill)" },
+  agent_action_executed: { label: "تنفيذ إجراء وكيل", icon: Bot, color: "var(--color-success)", soft: "var(--color-success-soft)", risk: true },
+  agent_action_failed: { label: "فشل إجراء وكيل", icon: Bot, color: "var(--color-danger)", soft: "var(--color-danger-soft)", risk: true },
+  agent_report_sent: { label: "تقرير وكيل", icon: Bot, color: "var(--color-primary)", soft: "var(--color-primary-soft)" },
 };
 const DEFAULT_META = { label: "حركة", icon: CheckCircle2, color: "var(--text-secondary)", soft: "var(--bg-pill)" };
 export const getActionMeta = (action) => ACTION_META[action] || DEFAULT_META;
 
 const ACTION_GROUPS = [
   { id: "all", label: "الكل", actions: null },
-  { id: "session", label: "دخول وخروج", actions: ["login", "logout"] },
-  { id: "sales", label: "مبيعات وديون", actions: ["record_sale", "record_debt", "pay_debt"] },
+  { id: "session", label: "دخول وخروج", actions: ["login", "logout", "login_failed", "login_locked", "permission_denied"] },
+  { id: "sales", label: "مبيعات وديون", actions: ["record_sale", "record_debt", "pay_debt", "customer_added", "customer_updated"] },
   { id: "products", label: "منتجات", actions: ["product_added", "product_updated", "delete_product", "delete:product_status_toggled"] },
   { id: "users", label: "مستخدمين", actions: ["user_added", "user_updated", "user_enabled", "user_disabled", "force_logout"] },
+  { id: "agents", label: "وكلاء", actions: ["agent_action_requested", "agent_action_approved", "agent_action_rejected", "agent_action_executed", "agent_action_failed", "agent_report_sent"] },
 ];
 
 const PAGE_SIZE = 30;
@@ -102,6 +114,24 @@ function detailParts(action, details) {
     case "force_logout":
       if (d.closedSessions != null) out.push(`تم إنهاء ${d.closedSessions} جلسة`);
       break;
+    case "customer_added":
+    case "customer_updated":
+      if (d.name) out.push(`الزبون: ${d.name}`);
+      if (d.creditLimit && typeof d.creditLimit === "object") out.push(`حد الدين: ${d.creditLimit.from ?? "بدون"} ← ${d.creditLimit.to ?? "بدون"}`);
+      break;
+    case "login_failed":
+    case "login_locked":
+      if (d.username) out.push(`المستخدم: ${d.username}`);
+      if (d.ip) out.push(`IP: ${d.ip}`);
+      break;
+    case "agent_action_requested":
+    case "agent_action_approved":
+    case "agent_action_rejected":
+    case "agent_action_executed":
+    case "agent_action_failed":
+      if (d.agent) out.push(`الوكيل: ${d.agent}`);
+      if (d.actionType) out.push(`الإجراء: ${d.actionType}`);
+      break;
     default:
   }
   return out;
@@ -141,7 +171,7 @@ export default function ActivityLogPage({ token, onApiError }) {
   }, [search]);
 
   useEffect(() => {
-    getUsers(token).then(setUsers).catch(() => {});
+    getUsers(token).then(setUsers).catch(() => { });
   }, [token]);
 
   const load = useCallback(

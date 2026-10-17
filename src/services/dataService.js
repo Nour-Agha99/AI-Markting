@@ -304,3 +304,25 @@ export async function getDashboard(token) {
   }
   return data;
 }
+
+// ---------- (المالك والمدير) الزبائن ----------
+export async function getCustomers(token, search = "") {
+  const qs = search ? `?search=${encodeURIComponent(search)}` : "";
+  const data = await apiRequest(`${ENDPOINTS.getCustomers}${qs}`, { token });
+  if (!data?.success) {
+    const error = new Error(data?.error || "ما قدرنا نجيب الزبائن.");
+    error.code = data?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+  return Array.isArray(data.customers) ? data.customers : [];
+}
+
+export async function saveCustomer(customer, token) {
+  const response = await apiRequest(ENDPOINTS.saveCustomer, { method: "PUT", token, body: customer });
+  if (!response?.success) {
+    const error = new Error(response?.error || "حصل خطأ أثناء حفظ الزبون.");
+    error.code = response?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+  return response.customer;
+}

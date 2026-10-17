@@ -188,9 +188,8 @@ export default function UsersPage({ token, currentUsername, onApiError }) {
     const username = form.username.trim();
     if (!fullName) return setFormError("الاسم الكامل مطلوب");
     if (!/^[a-zA-Z0-9_.]{3,30}$/.test(username)) return setFormError("اسم المستخدم: إنجليزي، من 3 لـ 30 حرف (يسمح بـ . و _)");
-    if (!form.id && form.password.length < 6) return setFormError("كلمة المرور مطلوبة، 6 أحرف على الأقل");
-    if (form.id && form.password && form.password.length < 6) return setFormError("كلمة المرور الجديدة لازم تكون 6 أحرف على الأقل");
-
+    if (!form.id && form.password.length < 8) return setFormError("كلمة المرور مطلوبة، 8 أحرف على الأقل");
+    if (form.id && form.password && form.password.length < 8) return setFormError("كلمة المرور الجديدة لازم تكون 8 أحرف على الأقل");
     setBusy(true);
     setFormError("");
     try {

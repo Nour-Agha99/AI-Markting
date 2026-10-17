@@ -9,7 +9,8 @@ import ProductsPage from "./pages/ProductsPage";
 import DebtsPage from "./pages/DebtsPage";
 import HistoryPage from "./pages/HistoryPage";
 import DashboardPage from "./pages/DashboardPage";
-import UsersPage from "./pages/Userspage"; 
+import UsersPage from "./pages/Userspage";
+import CustomersPage from "./pages/CustomersPage";
 import ActivityLogPage from "./pages/ActivityLogPage";
 
 const PAGE_TITLES = {
@@ -18,6 +19,7 @@ const PAGE_TITLES = {
   products: "المنتجات",
   history: "السجل",
   debts: "الديون",
+  customers: "الزبائن",
   activityLog: "سجل النشاطات",
   users: "المستخدمون",
 };
@@ -278,6 +280,7 @@ function App() {
           )}
           {activeTab === "history" && <HistoryPage onApiError={handleApiError} token={authToken} role={userRole} />}
           {activeTab === "debts" && <DebtsPage onApiError={handleApiError} token={authToken} role={userRole} />}
+          {activeTab === "customers" && <CustomersPage token={authToken} onApiError={handleApiError} />}
           {activeTab === "activityLog" && <ActivityLogPage token={authToken} onApiError={handleApiError} />}
           {activeTab === "users" && (
             <UsersPage token={authToken} currentUsername={username} onApiError={handleApiError} />
