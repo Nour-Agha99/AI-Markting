@@ -26,4 +26,8 @@ export const ENDPOINTS = {
   forceLogoutUser: `${N8N_BASE_URL}/force-logout-v2`,
   getActivityLog: `${N8N_BASE_URL}/getc-ativity-v2`,
   getDashboard: `${N8N_BASE_URL}/get-dashboard-v2`,
+
+  // customers
+  getCustomers: `${N8N_BASE_URL}/get-customers-v2`,
+  saveCustomer: `${N8N_BASE_URL}/save-customer-v2`,
 };

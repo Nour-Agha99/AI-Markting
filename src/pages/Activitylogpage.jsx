@@ -14,6 +14,7 @@ import {
   Search,
   RefreshCw,
   ChevronDown,
+  Bot,
 } from "lucide-react";
 import { getActivityLog, getUsers } from "../services/dataService";
 import { ROLE_LABELS } from "../utils/roles";
