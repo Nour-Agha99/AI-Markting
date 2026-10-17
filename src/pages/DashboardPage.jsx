@@ -81,30 +81,28 @@ function WeekChart({ days }) {
   const n = days.length;
   const [hover, setHover] = useState(null);
   const max = Math.max(...days.map((d) => d.total), 1);
-  // RTL: الأقدم عاليمين واليوم عاليسار، عشان يطابق ترتيب القراءة
-  const pts = days.map((d, i) => [100 - ((i + 0.5) / n) * 100, 92 - (d.total / max) * 74]);
-  const line = curve(pts);
-  const area = `${line} L${pts[n - 1][0]} 100 L${pts[0][0]} 100 Z`;
+  const hs = days.map((d) => Math.max(3, (d.total / max) * 80));
+  const pts = hs.map((v, i) => [100 - ((i + 0.5) / n) * 100, 100 - v]);
   const on = hover ?? n - 1;
 
   return (
     <div className="db-chart" style={{ "--n": n }} onMouseLeave={() => setHover(null)}>
       <div className="db-plot" role="img" aria-label="مبيعات آخر 7 أيام">
+        <div className="db-bars" aria-hidden="true">
+          {days.map((d, i) => (
+            <div key={d.t} className={`db-col${i === on ? " is-on" : ""}`}>
+              <i style={{ height: `${hs[i]}%`, "--i": i }} />
+            </div>
+          ))}
+        </div>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="db-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" style={{ stopColor: "var(--color-primary)", stopOpacity: 0.3 }} />
-              <stop offset="1" style={{ stopColor: "var(--color-primary)", stopOpacity: 0 }} />
-            </linearGradient>
-          </defs>
-          <path d={area} fill="url(#db-fill)" />
-          <path className="db-line" d={line} />
+          <path className="db-line" d={curve(pts)} />
         </svg>
         {days.map((d, i) => (
           <span
             key={d.t}
             className={`db-pt${i === 0 ? " e-r" : ""}${i === n - 1 ? " e-l" : ""}${i === on ? " is-on" : ""}`}
-            style={{ left: `${pts[i][0]}%`, top: `${pts[i][1]}%` }}
+            style={{ left: `${pts[i][0]}%`, top: `${pts[i][1]}%`, "--i": i }}
           >
             <i />
             {i === on && <b>{money(d.total)}</b>}
@@ -163,7 +161,7 @@ export default function DashboardPage({ token, mainProducts = [], username, onAp
     setLoading(false);
   }
 
-  // تحديث هادئ كل دقيقتين والصفحة مفتوحة
+    // تحديث هادئ كل دقيقتين والصفحة مفتوحة
   useEffect(() => {
     refresh();
     const id = setInterval(() => !document.hidden && refresh(true), 120000);
