@@ -25,7 +25,7 @@ export const ENDPOINTS = {
   saveUser: `${N8N_BASE_URL}/save-user-v2`,
   toggleUserStatus: `${N8N_BASE_URL}/toggle-user-v2`,
   forceLogoutUser: `${N8N_BASE_URL}/force-logout-v2`,
-  getActivityLog: `${N8N_BASE_URL}/get-ativity-v2`,
+  getActivityLog: `${N8N_BASE_URL}/get-activity-v2`,
   getDashboard: `${N8N_BASE_URL}/get-dashboard-v2`,
 
   // customers
