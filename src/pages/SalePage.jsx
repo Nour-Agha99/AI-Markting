@@ -14,12 +14,10 @@ import {
   ScanLine,
   Undo2,
 } from "lucide-react";
-import { recordSale, updateProduct } from "../services/dataService";
 import { canManageProducts } from "../utils/roles";
 import { useBarcodeScanner } from "../hooks/useBarcodeScanner";
 import BarcodeCamera from "../components/BarcodeCamera";
 import { beep } from "../utils/scanFeedback";
-import { cameraSupported, preloadScanner, sameCode } from "../utils/scanner";
 import { recordSale } from "../services/dataService";
 import { linkBarcode as linkBarcodeApi } from "../services/dataService";
 import { cameraSupported, preloadScanner, sameCode, gtinCheck } from "../utils/scanner";
