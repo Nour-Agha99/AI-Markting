@@ -20,6 +20,9 @@ import { useBarcodeScanner } from "../hooks/useBarcodeScanner";
 import BarcodeCamera from "../components/BarcodeCamera";
 import { beep } from "../utils/scanFeedback";
 import { cameraSupported, preloadScanner, sameCode } from "../utils/scanner";
+import { recordSale } from "../services/dataService";
+import { linkBarcode as linkBarcodeApi } from "../services/dataService";
+import { cameraSupported, preloadScanner, sameCode, gtinCheck } from "../utils/scanner";
 import "./SalePage.css";
 
 const PAYMENT_METHODS = [
@@ -193,6 +196,7 @@ export default function SalePage({ token, role, mainProducts, productsLoading, r
   const nameRef = useRef(null);
   const toastTimer = useRef(null);
   const attempt = useRef(null);
+  const lastRefresh = useRef(0);
 
   const items = useMemo(
     () =>
@@ -283,10 +287,17 @@ export default function SalePage({ token, role, mainProducts, productsLoading, r
     beep(true);
   }
 
-  function handleScan(raw) {
+  async function handleScan(raw) {
     const code = String(raw).trim();
     if (!code) return;
-    const p = mainProducts.find((x) => x.barcode && sameCode(x.barcode, code));
+    const find = (list) => list.find((x) => x.barcode && sameCode(x.barcode, code));
+
+    let p = find(mainProducts);
+    if (!p && Date.now() - lastRefresh.current > 15000) {          // مرة كل 15 ثانية بالكتير
+      lastRefresh.current = Date.now();
+      const fresh = await refreshProducts();
+      if (fresh) p = find(fresh);
+    }
     if (p) return addScanned(p);
     beep(false);
     setLastScan(null);
@@ -316,27 +327,21 @@ export default function SalePage({ token, role, mainProducts, productsLoading, r
   async function linkBarcode(p) {
     setLinkBusy(true);
     try {
-      await updateProduct(
-        p.id,
-        {
-          name: p.name,
-          buyPrice: Number.isFinite(p.buyPrice) ? p.buyPrice : 0,
-          sellPrice: p.sellPrice,
-          quantity: p.quantity,
-          expectedQuantity: p.quantity,
-          unit: p.unit,
-          alertThreshold: p.alertThreshold,
-          barcode: unknownCode,
-        },
-        token
-      );
+      await linkBarcodeApi(p.id, unknownCode, token);
       setLinking(false);
-      addScanned(p);
+      const fresh = await refreshProducts();
+      const fp = fresh?.find((x) => x.id === p.id) || { ...p, barcode: unknownCode };
+      addScanned(fp);
       flash("success", `تم ربط الباركود بـ ${p.name}`);
-      await refreshProducts();
     } catch (err) {
-      if (err?.code !== "SESSION_EXPIRED") flash("danger", err.message || "ما قدرنا نربط الباركود، حاول مرة ثانية.");
-      else onApiError?.(err);
+      if (err?.code === "SESSION_EXPIRED") onApiError?.(err);
+      else {
+        flash("danger", err.message || "ما قدرنا نربط الباركود، حاول مرة ثانية.");
+        if (err?.code === "BARCODE_EXISTS" || err?.code === "PRODUCT_NOT_FOUND") {
+          setLinking(false);
+          refreshProducts();                                       // القائمة عندك قديمة
+        }
+      }
     } finally {
       setLinkBusy(false);
     }
@@ -469,9 +474,14 @@ export default function SalePage({ token, role, mainProducts, productsLoading, r
         {unknownCode && (
           <div className="sp-scan-bad" role="alert">
             <span>
-              الباركود <bdi>{unknownCode}</bdi> مش مسجّل بأي منتج.
+              الباركود <bdi>{unknownCode}</bdi>{" "}
+              {gtinCheck(unknownCode) === false ? "قراءته مش مؤكدة، أعد المسح." : "مش مسجّل بأي منتج."}
             </span>
-            {canLink ? <button onClick={() => setLinking(true)}>ربطه بمنتج</button> : <small>بلّغ المدير ليضيفه.</small>}
+            {gtinCheck(unknownCode) === false ? null : canLink ? (
+              <button onClick={() => setLinking(true)}>ربطه بمنتج</button>
+            ) : (
+              <small>بلّغ المدير ليضيفه.</small>
+            )}
             <button className="sp-scan-x" onClick={() => setUnknownCode(null)} aria-label="إغلاق">
               <X size={14} />
             </button>

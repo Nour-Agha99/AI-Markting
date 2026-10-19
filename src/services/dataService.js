@@ -326,3 +326,18 @@ export async function saveCustomer(customer, token) {
   }
   return response.customer;
 }
+
+// ---------- ربط الباركود (يغيّر الباركود بس) ----------
+export async function linkBarcode(productId, barcode, token) {
+  const response = await apiRequest(ENDPOINTS.linkBarcode, {
+    method: "PUT",
+    token,
+    body: { productId, barcode },
+  });
+  if (!response?.success) {
+    const error = new Error(response?.error || "ما قدرنا نربط الباركود.");
+    error.code = response?.code || "UNKNOWN_ERROR";
+    throw error;
+  }
+  return response.product;
+}

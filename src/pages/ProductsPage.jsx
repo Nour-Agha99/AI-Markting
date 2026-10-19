@@ -138,7 +138,7 @@ export default function ProductsPage({ token, role, mainProducts, productsLoadin
       unit: form.unit,
       alertThreshold: parseFloat(form.alertThreshold) || 0,
       barcode: form.barcode.trim() || null,
-      ...(form.id ? { expectedQuantity: form.expectedQuantity } : {}),
+      ...(form.id ? { expectedQuantity: Number(form.expectedQuantity) } : {}),   // <-- جديد
     };
     if (!payload.name) return setFormError("اسم المنتج مطلوب");
     if (payload.sellPrice <= 0) return setFormError("اكتب سعر البيع");
@@ -154,11 +154,11 @@ export default function ProductsPage({ token, role, mainProducts, productsLoadin
       flash("success", form.id ? "تم حفظ التعديلات" : "تمت إضافة المنتج");
       await refreshProducts();
     } catch (err) {
-      if (err?.code === "STOCK_CHANGED") refreshProducts();
-      if (err?.code !== "SESSION_EXPIRED") setFormError(err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
-      else onApiError?.(err);
-    } finally {
-      setSaving(false);
+      if (err?.code === "SESSION_EXPIRED") onApiError?.(err);
+      else {
+        setFormError(err.message || "حصل خطأ غير متوقع، حاول مرة ثانية.");
+        if (err?.code === "STOCK_CHANGED" || err?.code === "BARCODE_EXISTS") refreshProducts();
+      }
     }
   }
 
@@ -348,6 +348,11 @@ export default function ProductsPage({ token, role, mainProducts, productsLoadin
                   onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
                   spellCheck={false}
                 />
+                {form.barcode && gtinCheck(form.barcode.trim()) === false && (
+                  <div className="pr-help" style={{ color: "var(--color-warning)" }}>
+                    رقم التحقق غلط: تأكد إنك كتبته أو مسحته صح.
+                  </div>
+                )}
                 {camSupported && (
                   <button type="button" onClick={() => setCam(true)} aria-label="مسح بالكاميرا">
                     <ScanLine size={18} />

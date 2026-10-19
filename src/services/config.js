@@ -11,6 +11,7 @@ export const ENDPOINTS = {
   addProduct: `${N8N_BASE_URL}/save-product-v2`,
   editProduct: `${N8N_BASE_URL}/save-product-v2`,
   deleteProduct: `${N8N_BASE_URL}/delete-product-v2`,
+  linkBarcode: `${N8N_BASE_URL}/link-barcode-v2`,
 
   // sales, debts, history, dashboard
   recordSale: `${N8N_BASE_URL}/record-sale-v2`,
@@ -24,7 +25,7 @@ export const ENDPOINTS = {
   saveUser: `${N8N_BASE_URL}/save-user-v2`,
   toggleUserStatus: `${N8N_BASE_URL}/toggle-user-v2`,
   forceLogoutUser: `${N8N_BASE_URL}/force-logout-v2`,
-  getActivityLog: `${N8N_BASE_URL}/getc-ativity-v2`,
+  getActivityLog: `${N8N_BASE_URL}/get-ativity-v2`,
   getDashboard: `${N8N_BASE_URL}/get-dashboard-v2`,
 
   // customers

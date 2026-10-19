@@ -8,12 +8,25 @@ export function cameraSupported() {
   return !!navigator.mediaDevices?.getUserMedia || (typeof window !== "undefined" && window.isSecureContext === false);
 }
 
-// مقارنة الباركودات: UPC-A (12 رقم) هو نفسه EAN-13 مع صفر بالبداية، وكل قارئ بيرجّعه بشكل
+// نفس تطبيع قاعدة البيانات (norm_barcode) بالضبط: UPC-A (12) و EAN-13 (13) و GTIN-14 = نفس الكود (padding لـ 14).
+// أي كود ثاني بيضل حرفي، فالأكواد القصيرة (001 و 1) ما بتتصادم.
 export function normCode(c) {
   const s = String(c ?? "").trim();
-  return /^\d+$/.test(s) ? s.replace(/^0+/, "") || "0" : s;
+  return /^\d{12,14}$/.test(s) ? s.padStart(14, "0") : s;
 }
 export const sameCode = (a, b) => normCode(a) === normCode(b);
+
+// فحص رقم التحقق (EAN-8 / UPC-A / EAN-13 / GTIN-14).
+// true = سليم، false = قراءة غلط (أو كود مطبوع غلط)، null = مش من هالأنواع فما منقدر نحكم (أكواد داخلية/نصية).
+export function gtinCheck(code) {
+  const s = String(code ?? "").trim();
+  if (!/^(\d{8}|\d{12,14})$/.test(s)) return null;
+  const d = s.split("").map(Number);
+  const check = d.pop();
+  let sum = 0;
+  for (let i = d.length - 1, w = 3; i >= 0; i--, w = 4 - w) sum += d[i] * w;
+  return (10 - (sum % 10)) % 10 === check;
+}
 
 let zxingPromise = null;
 

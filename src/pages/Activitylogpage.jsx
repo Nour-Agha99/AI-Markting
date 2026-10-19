@@ -47,6 +47,8 @@ export const ACTION_META = {
   agent_action_executed: { label: "تنفيذ إجراء وكيل", icon: Bot, color: "var(--color-success)", soft: "var(--color-success-soft)", risk: true },
   agent_action_failed: { label: "فشل إجراء وكيل", icon: Bot, color: "var(--color-danger)", soft: "var(--color-danger-soft)", risk: true },
   agent_report_sent: { label: "تقرير وكيل", icon: Bot, color: "var(--color-primary)", soft: "var(--color-primary-soft)" },
+  barcode_linked: { label: "ربط باركود", icon: PackagePlus, color: "var(--color-primary)", soft: "var(--color-primary-soft)" },
+  barcode_unlinked: { label: "فك باركود", icon: PackageMinus, color: "var(--color-warning)", soft: "var(--color-warning-soft)" },
 };
 const DEFAULT_META = { label: "حركة", icon: CheckCircle2, color: "var(--text-secondary)", soft: "var(--bg-pill)" };
 export const getActionMeta = (action) => ACTION_META[action] || DEFAULT_META;
@@ -55,7 +57,7 @@ const ACTION_GROUPS = [
   { id: "all", label: "الكل", actions: null },
   { id: "session", label: "دخول وخروج", actions: ["login", "logout", "login_failed", "login_locked", "permission_denied"] },
   { id: "sales", label: "مبيعات وديون", actions: ["record_sale", "record_debt", "pay_debt", "customer_added", "customer_updated"] },
-  { id: "products", label: "منتجات", actions: ["product_added", "product_updated", "delete_product", "delete:product_status_toggled"] },
+  { id: "products", label: "منتجات", actions: ["product_added", "product_updated", "delete_product", "delete:product_status_toggled", "barcode_linked", "barcode_unlinked"] },
   { id: "users", label: "مستخدمين", actions: ["user_added", "user_updated", "user_enabled", "user_disabled", "force_logout"] },
   { id: "agents", label: "وكلاء", actions: ["agent_action_requested", "agent_action_approved", "agent_action_rejected", "agent_action_executed", "agent_action_failed", "agent_report_sent"] },
 ];
@@ -102,6 +104,11 @@ function detailParts(action, details) {
     case "delete:product_status_toggled":
       if (d.name) out.push(`المنتج: ${d.name}`);
       if (d.productDetails?.sellPrice != null && action !== "delete_product") out.push(`سعر البيع ${money(d.productDetails.sellPrice)}`);
+      break;
+    case "barcode_linked":
+    case "barcode_unlinked":
+      if (d.name) out.push(`المنتج: ${d.name}`);
+      if (d.barcode?.to) out.push(`الباركود: ${d.barcode.to}`);
       break;
     case "user_added":
     case "user_updated":

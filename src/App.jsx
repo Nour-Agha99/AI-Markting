@@ -143,20 +143,22 @@ function App() {
     restoreSession();
   }, []);
 
-  const refreshProducts = useCallback(async () => {
-    if (!authToken) return;
-    try {
-      const products = await getProducts(authToken);
-      setMainProducts(products);
-      setProductsError("");
-    } catch (err) {
-      if (err?.code === "SESSION_EXPIRED") {
-        handleLogout();
-      } else {
-        setProductsError(err.message || "ما قدرنا نحدّث المنتجات، حاول مرة ثانية.");
-      }
+ const refreshProducts = useCallback(async () => {
+  if (!authToken) return null;
+  try {
+    const products = await getProducts(authToken);
+    setMainProducts(products);
+    setProductsError("");
+    return products;
+  } catch (err) {
+    if (err?.code === "SESSION_EXPIRED") {
+      handleLogout();
+    } else {
+      setProductsError(err.message || "ما قدرنا نحدّث المنتجات، حاول مرة ثانية.");
     }
-  }, [authToken]);
+    return null;
+  }
+}, [authToken]);
 
   function handleApiError(err) {
     if (err?.code === "SESSION_EXPIRED") {
