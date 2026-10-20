@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, X, Search, AlertTriangle, PackageX, ScanLine, Bar
 import { addProduct, updateProduct, deleteProduct } from "../services/dataService";
 import { canManageProducts } from "../utils/roles";
 import BarcodeCamera from "../components/BarcodeCamera";
-import { cameraSupported, preloadScanner, sameCode } from "../utils/scanner";
+import { cameraSupported, preloadScanner, sameCode, gtinCheck } from "../utils/scanner";
 import "./ProductsPage.css";
 
 const emptyForm = { name: "", buyPrice: "", sellPrice: "", quantity: "", unit: "piece", alertThreshold: "", barcode: "" };
